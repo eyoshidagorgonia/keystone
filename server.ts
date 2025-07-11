@@ -7,7 +7,8 @@ import { createCertificate } from 'pem';
 import { execSync } from 'child_process';
 
 const dev = process.env.NODE_ENV !== 'production';
-const app = next({ dev });
+// Explicitly tell Next.js to use the current directory for the app
+const app = next({ dev, dir: '.' });
 const handle = app.getRequestHandler();
 
 const port = parseInt(process.env.PORT || '9002', 10);

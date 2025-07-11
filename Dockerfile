@@ -1,6 +1,9 @@
 # Use a specific Node.js version as a base image for the builder stage
 FROM node:20-alpine as base
 
+# Install openssl for the pem package
+RUN apk add --no-cache openssl
+
 # Set the working directory
 WORKDIR /usr/src/app
 
@@ -25,23 +28,23 @@ RUN npm run build
 # Start a new, smaller image for the final production build
 FROM node:20-alpine
 
-WORKDIR /usr/src/app
-
-# Add openssl for self-signed cert generation in server.ts
+# Install openssl for the pem package to generate certs on startup
 RUN apk add --no-cache openssl
 
-# Install production dependencies only
+WORKDIR /usr/src/app
+
+# Copy production dependencies from the builder stage
+COPY --from=base /usr/src/app/node_modules ./node_modules
 COPY --from=base /usr/src/app/package*.json ./
-RUN npm install --omit=dev
 
 # Copy the built application and necessary files from the base image
 COPY --from=base /usr/src/app/dist ./dist
 COPY --from=base /usr/src/app/.next ./.next
 COPY --from=base /usr/src/app/public ./public
+COPY --from=base /usr/src/app/src ./src
 COPY --from=base /usr/src/app/next.config.ts .
 COPY --from=base /usr/src/app/data ./data
 COPY --from=base /usr/src/app/apphosting.yaml .
-COPY --from=base /usr/src/app/package.json .
 
 # Expose the port the app runs on
 EXPOSE 9002
