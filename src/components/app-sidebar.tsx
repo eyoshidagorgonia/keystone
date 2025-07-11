@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -34,7 +35,8 @@ import {
   ShieldCheck,
   LifeBuoy,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  BookText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +44,7 @@ const navItems = [
   { href: "/", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/keys", icon: KeyRound, label: "API Keys" },
   { href: "/services", icon: Server, label: "Services" },
+  { href: "/documentation", icon: BookText, label: "Documentation" },
   { href: "/settings", icon: Settings, label: "Settings" },
 ];
 

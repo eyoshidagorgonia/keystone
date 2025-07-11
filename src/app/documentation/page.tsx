@@ -1,0 +1,121 @@
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { CodeBlock } from "@/components/code-block";
+
+export default function DocumentationPage() {
+  return (
+    <div className="flex flex-col gap-8">
+      <header>
+        <h1 className="text-3xl font-bold font-headline tracking-tight">Documentation</h1>
+        <p className="text-muted-foreground">
+          How to integrate with the KeyStone API Proxy.
+        </p>
+      </header>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-headline">Authentication</CardTitle>
+          <CardDescription>
+            All API requests require an API key for authentication.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p>
+            You must include your API key in the `Authorization` header of your request, using the `Bearer` scheme.
+          </p>
+          <CodeBlock language="bash">
+            {`Authorization: Bearer YOUR_API_KEY`}
+          </CodeBlock>
+           <p>
+            You can generate API keys from the "API Keys" tab in the dashboard.
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-headline">Making Requests</CardTitle>
+          <CardDescription>
+            The proxy forwards requests to the Ollama API. Use the standard Ollama API routes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+            <p>Your API endpoint is:</p>
+            <CodeBlock language="text">
+                {`http://localhost:9002/api/v1/proxy`}
+            </CodeBlock>
+            <p>
+              To interact with the Ollama API, append the standard Ollama path to the proxy endpoint. For example, to generate content, you would post to `/generate`.
+            </p>
+            <h3 className="font-semibold pt-4">Example: cURL Request</h3>
+            <CodeBlock language="bash">
+{`curl http://localhost:9002/api/v1/proxy/generate \\
+  -X POST \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -d '{
+    "model": "llama3",
+    "prompt": "Why is the sky blue?",
+    "stream": false
+  }'`}
+            </CodeBlock>
+
+            <h3 className="font-semibold pt-4">Example: Python Request</h3>
+            <CodeBlock language="python">
+{`import requests
+import json
+
+api_key = "YOUR_API_KEY"
+proxy_url = "http://localhost:9002/api/v1/proxy/generate"
+
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {api_key}"
+}
+
+data = {
+    "model": "llama3",
+    "prompt": "Why is the sky blue?",
+    "stream": False
+}
+
+response = requests.post(proxy_url, headers=headers, data=json.dumps(data))
+
+if response.status_code == 200:
+    print(response.json())
+else:
+    print(f"Error: {response.status_code}")
+    print(response.text)`}
+            </CodeBlock>
+
+             <h3 className="font-semibold pt-4">Example: Node.js (axios) Request</h3>
+            <CodeBlock language="javascript">
+{`const axios = require('axios');
+
+const apiKey = 'YOUR_API_KEY';
+const proxyUrl = 'http://localhost:9002/api/v1/proxy/generate';
+
+const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': \`Bearer \${apiKey}\`
+};
+
+const data = {
+    model: 'llama3',
+    prompt: 'Why is the sky blue?',
+    stream: false
+};
+
+axios.post(proxyUrl, data, { headers })
+    .then(response => {
+        console.log(response.data);
+    })
+    .catch(error => {
+        console.error('Error:', error.response ? error.response.data : error.message);
+    });`}
+            </CodeBlock>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
