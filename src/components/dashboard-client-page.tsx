@@ -44,8 +44,34 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function DashboardClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
-  const [apiKeys] = React.useState<ApiKey[]>(initialKeys);
+  const [apiKeys, setApiKeys] = React.useState<ApiKey[]>(initialKeys);
+
+  React.useEffect(() => {
+    const fetchKeys = async () => {
+      try {
+        const response = await fetch('/api/v1/keys');
+        if (!response.ok) {
+          // Don't throw an error, just log it, so the UI doesn't break
+          console.error('Failed to fetch API keys');
+          return;
+        }
+        const keys = await response.json();
+        setApiKeys(keys);
+      } catch (e: any) {
+        console.error("Could not load API keys. " + e.message);
+      }
+    };
+
+    const intervalId = setInterval(fetchKeys, 5000); // Fetch every 5 seconds
+
+    // Clear interval on component unmount
+    return () => clearInterval(intervalId);
+  }, []);
+
+
   const recentKeys = [...apiKeys].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+  const totalRequests = apiKeys.reduce((acc, key) => acc + key.usage, 0);
+  const activeKeysCount = apiKeys.filter(key => key.status === 'active').length;
 
   return (
     <div className="flex flex-col gap-8">
@@ -66,7 +92,7 @@ export function DashboardClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
           <CardContent>
             <div className="text-2xl font-bold">{apiKeys.length}</div>
             <p className="text-xs text-muted-foreground">
-              {apiKeys.filter(key => key.status === 'active').length} active
+              {activeKeysCount} active
             </p>
           </CardContent>
         </Card>
@@ -90,9 +116,9 @@ export function DashboardClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
             <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12,234</div>
+            <div className="text-2xl font-bold">{totalRequests.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              +15.2% from last month
+              Across all keys
             </p>
           </CardContent>
         </Card>
