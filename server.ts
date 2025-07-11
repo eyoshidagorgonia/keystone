@@ -6,7 +6,7 @@ import next from 'next';
 import pem from 'pem';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 
-const { createCertificate, checkOpenSSL } = pem;
+const { createCertificate } = pem;
 type SslInformation = pem.SslInformation;
 
 const dev = process.env.NODE_ENV !== 'production';
@@ -26,17 +26,6 @@ async function getHttpsOptions() {
       key: readFileSync(keyPath),
       cert: readFileSync(certPath),
     };
-  }
-
-  const opensslExists = await new Promise<boolean>((resolve) => {
-    checkOpenSSL((err, result) => {
-        resolve(result);
-    });
-  });
-
-  if (!opensslExists) {
-    console.warn('OpenSSL not found. Cannot generate certificate. Starting in HTTP mode.');
-    return null;
   }
   
   console.log('Generating self-signed SSL certificate...');

@@ -1,6 +1,9 @@
 # Use an official Node.js runtime as a parent image
 FROM node:20-slim
 
+# Install OpenSSL and other essentials
+RUN apt-get update && apt-get install -y openssl procps
+
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
@@ -13,11 +16,10 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
-# Expose the ports for the Next.js UI and Genkit services
-# 9002 for Next.js dev server
-# 4000 for Genkit Inspector UI
-# 3400 for Genkit Flows API
-EXPOSE 9002 4000 3400
+# The app binds to this port
+EXPOSE 9002
+EXPOSE 4000
+EXPOSE 3400
 
-# The command to run both services will be in docker-compose.yml
+# The command to run the app will be specified in docker-compose.yml
 CMD ["npm", "run", "dev"]
