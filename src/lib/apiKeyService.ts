@@ -10,6 +10,7 @@ async function ensureDataFileExists() {
   try {
     await fs.access(dataFilePath);
   } catch (error) {
+    console.log('[API Key Service] Data file not found. Creating a new one with initial data.');
     await fs.mkdir(path.dirname(dataFilePath), { recursive: true });
     await fs.writeFile(dataFilePath, JSON.stringify(initialApiKeys, null, 2), 'utf8');
   }
@@ -17,12 +18,14 @@ async function ensureDataFileExists() {
 
 export async function getApiKeys(): Promise<ApiKey[]> {
   await ensureDataFileExists();
+  // console.log('[API Key Service] Reading API keys from file:', dataFilePath);
   const fileContent = await fs.readFile(dataFilePath, 'utf8');
   return JSON.parse(fileContent);
 }
 
 export async function saveApiKeys(keys: ApiKey[]): Promise<void> {
   await ensureDataFileExists();
+  console.log(`[API Key Service] Saving ${keys.length} API keys to file:`, dataFilePath);
   await fs.writeFile(dataFilePath, JSON.stringify(keys, null, 2), 'utf8');
 }
 
@@ -40,6 +43,7 @@ export async function addApiKey(keyData: { name: string; rateLimit: number }): P
   };
   const updatedKeys = [newKey, ...keys];
   await saveApiKeys(updatedKeys);
+  console.log(`[API Key Service] Added new key: "${newKey.name}"`);
   return newKey;
 }
 
@@ -51,10 +55,12 @@ export async function updateApiKey(updatedKey: ApiKey): Promise<void> {
     }
     keys[keyIndex] = updatedKey;
     await saveApiKeys(keys);
+    console.log(`[API Key Service] Updated key: "${updatedKey.name}"`);
 }
 
 export async function deleteApiKey(keyId: string): Promise<void> {
     const keys = await getApiKeys();
     const updatedKeys = keys.filter(k => k.id !== keyId);
     await saveApiKeys(updatedKeys);
+    console.log(`[API Key Service] Deleted key with ID: "${keyId}"`);
 }
