@@ -4,7 +4,7 @@ FROM node:20-alpine as base
 # Set the working directory
 WORKDIR /usr/src/app
 
-# Create a public directory if it doesn't exist to prevent copy errors
+# Create a public directory if it doesn't exist, to prevent build errors
 RUN mkdir -p public
 
 # The build context is the Git repository, so we can copy the files directly
@@ -17,7 +17,7 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
-# Build the Next.js application
+# Build the Next.js application and the custom server
 RUN npm run build
 
 # ---
@@ -32,9 +32,9 @@ COPY --from=base /usr/src/app/package*.json ./
 RUN npm install --omit=dev
 
 # Copy the built application and necessary files from the base image
+COPY --from=base /usr/src/app/dist ./dist
 COPY --from=base /usr/src/app/.next ./.next
 COPY --from=base /usr/src/app/public ./public
-COPY --from=base /usr/src/app/server.ts .
 COPY --from=base /usr/src/app/next.config.ts .
 COPY --from=base /usr/src/app/data ./data
 COPY --from=base /usr/src/app/apphosting.yaml .
@@ -44,4 +44,4 @@ COPY --from=base /usr/src/app/package.json .
 EXPOSE 9002
 
 # The command to start the server in production mode
-CMD ["npm", "start"]
+CMD ["npm", "run", "start"]
