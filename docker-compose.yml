@@ -35,7 +35,7 @@ services:
       - KEYSTONE_MODE=api
       - PORT=9003
     command: >
-      sh -c "npm run genkit:dev & npm run dev"
+      sh -c "npm run start"
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
