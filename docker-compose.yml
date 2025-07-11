@@ -14,8 +14,7 @@ services:
     environment:
       - KEYSTONE_MODE=admin
       - PORT=9002
-    command: >
-      sh -c "npm run dev"
+    command: ["npm", "run", "dev"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -34,8 +33,7 @@ services:
     environment:
       - KEYSTONE_MODE=api
       - PORT=9003
-    command: >
-      sh -c "npm run start"
+    command: ["npm", "run", "start"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
