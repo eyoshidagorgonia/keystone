@@ -1,23 +1,41 @@
 version: '3.8'
 
 services:
-  app:
+  admin-ui:
     build: .
-    container_name: keystone_app
+    container_name: keystone_admin_ui
     ports:
       - "9002:9002" # Next.js Admin UI
-      - "4000:4000" # Genkit Inspector UI
-      - "3400:3400" # Genkit Flows API
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
       - /usr/src/app/.next
       - keystone_data:/usr/src/app/data
-    # This command starts both the Next.js dev server and the Genkit server
+    environment:
+      - KEYSTONE_MODE=admin
+      - PORT=9002
+    command: >
+      sh -c "npm run dev"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  api-proxy:
+    build: .
+    container_name: keystone_api_proxy
+    ports:
+      - "9003:9003" # API Proxy Server
+      - "4000:4000" # Genkit Inspector UI (optional, could be on admin-ui)
+      - "3400:3400" # Genkit Flows API (optional, could be on admin-ui)
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+      - /usr/src/app/.next
+      - keystone_data:/usr/src/app/data # Shared volume for API keys
+    environment:
+      - KEYSTONE_MODE=api
+      - PORT=9003
     command: >
       sh -c "npm run genkit:dev & npm run dev"
-    # For Windows Docker Desktop, this allows the container to access
-    # services running on the host machine (like Ollama).
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
