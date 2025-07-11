@@ -88,7 +88,7 @@ else:
     print(response.text)`}
             </CodeBlock>
 
-             <h3 className="font-semibold pt-4">Example: Node.js (axios) Request</h3>
+            <h3 className="font-semibold pt-4">Example: Node.js (axios) Request</h3>
             <CodeBlock language="javascript">
 {`const axios = require('axios');
 
@@ -113,6 +113,81 @@ axios.post(proxyUrl, data, { headers })
     .catch(error => {
         console.error('Error:', error.response ? error.response.data : error.message);
     });`}
+            </CodeBlock>
+
+            <h3 className="font-semibold pt-4">Example: TypeScript (fetch) Request</h3>
+            <CodeBlock language="typescript">
+{`async function generateText() {
+  const apiKey = 'YOUR_API_KEY';
+  const proxyUrl = 'http://localhost:9002/api/v1/proxy/generate';
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': \`Bearer \${apiKey}\`,
+  };
+
+  const body = {
+    model: 'llama3',
+    prompt: 'Why is the sky blue?',
+    stream: false,
+  };
+
+  try {
+    const response = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new Error(\`HTTP error! status: \${response.status}\`);
+    }
+
+    const data = await response.json();
+    console.log(data);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
+}
+
+generateText();`}
+            </CodeBlock>
+        </CardContent>
+      </Card>
+
+       <Card>
+        <CardHeader>
+          <CardTitle className="font-headline">Schemas</CardTitle>
+          <CardDescription>
+            Type definitions for API requests and responses.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+            <h3 className="font-semibold pt-4">Generate Request Body</h3>
+            <CodeBlock language="typescript">
+{`interface GenerateRequest {
+  model: string;
+  prompt: string;
+  stream?: boolean;
+  // ...other standard Ollama API parameters like 'options', 'system', etc.
+}`}
+            </CodeBlock>
+
+            <h3 className="font-semibold pt-4">Generate Response Body</h3>
+            <CodeBlock language="typescript">
+{`interface GenerateResponse {
+  model: string;
+  created_at: string;
+  response: string;
+  done: boolean;
+  context?: number[];
+  total_duration?: number;
+  load_duration?: number;
+  prompt_eval_count?: number;
+  prompt_eval_duration?: number;
+  eval_count?: number;
+  eval_duration?: number;
+}`}
             </CodeBlock>
         </CardContent>
       </Card>
