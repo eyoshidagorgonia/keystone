@@ -7,11 +7,18 @@ import { createCertificate } from 'pem';
 import { execSync } from 'child_process';
 
 const dev = process.env.NODE_ENV !== 'production';
-// Explicitly tell Next.js to use the current directory for the app
 const app = next({ dev, dir: '.' });
 const handle = app.getRequestHandler();
 
-const port = parseInt(process.env.PORT || '9002', 10);
+// Set default port based on the mode
+const getDefaultPort = () => {
+    if (process.env.KEYSTONE_MODE === 'api') {
+        return '9003';
+    }
+    return '9002';
+};
+
+const port = parseInt(process.env.PORT || getDefaultPort(), 10);
 const hostname = '0.0.0.0';
 
 async function getHttpsOptions() {
@@ -36,6 +43,7 @@ async function getHttpsOptions() {
     };
   } catch (error: any) {
     console.error('Failed to generate SSL certificate:', error.message);
+    console.warn('Continuing without SSL. OpenSSL might not be installed or accessible.');
     return null;
   }
 }
@@ -53,7 +61,7 @@ async function main() {
       console.log(`> Ready on https://${hostname}:${port}`);
     });
   } else {
-    console.log('Starting in HTTP mode.');
+    console.log('Starting in HTTP mode as SSL certificate generation failed.');
     createHttpServer((req, res) => {
       const parsedUrl = parse(req.url!, true);
       handle(req, res, parsedUrl);
