@@ -27,6 +27,9 @@ FROM node:20-alpine
 
 WORKDIR /usr/src/app
 
+# Add openssl for self-signed cert generation in server.ts
+RUN apk add --no-cache openssl
+
 # Install production dependencies only
 COPY --from=base /usr/src/app/package*.json ./
 RUN npm install --omit=dev
