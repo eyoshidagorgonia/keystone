@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -13,14 +14,17 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { apiKeys as initialApiKeys } from "@/lib/data";
 import { ApiKey } from "@/types";
-import { Plus, MoreVertical, Copy, Trash2, Ban } from "lucide-react";
+import { Plus, MoreVertical, Copy, Trash2, Ban, Pencil } from "lucide-react";
 import { GenerateKeyDialog } from "@/components/generate-key-dialog";
+import { EditKeyDialog } from "@/components/edit-key-dialog";
 import { toast } from "@/hooks/use-toast";
 import {
     AlertDialog,
@@ -36,10 +40,17 @@ import {
 
 export default function KeysPage() {
   const [apiKeys, setApiKeys] = React.useState<ApiKey[]>(initialApiKeys);
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isGenerateDialogOpen, setIsGenerateDialogOpen] = React.useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
+  const [selectedKey, setSelectedKey] = React.useState<ApiKey | null>(null);
 
   const handleKeyGenerated = (key: ApiKey) => {
     setApiKeys((prev) => [key, ...prev]);
+  };
+  
+  const handleKeyUpdated = (updatedKey: ApiKey) => {
+    setApiKeys(apiKeys.map(k => k.id === updatedKey.id ? updatedKey : k));
+    setSelectedKey(null);
   };
 
   const copyKey = (key: string) => {
@@ -57,6 +68,10 @@ export default function KeysPage() {
     toast({ title: "Key Deleted", description: "The API key has been permanently deleted.", variant: "destructive"})
   }
 
+  const openEditDialog = (key: ApiKey) => {
+    setSelectedKey(key);
+    setIsEditDialogOpen(true);
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -67,7 +82,7 @@ export default function KeysPage() {
             Manage API keys for accessing your services.
             </p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)}>
+        <Button onClick={() => setIsGenerateDialogOpen(true)}>
             <Plus className="-ml-1 mr-2 h-4 w-4" />
             Generate New Key
         </Button>
@@ -114,10 +129,15 @@ export default function KeysPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openEditDialog(key)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => copyKey(key.key)}>
                           <Copy className="mr-2 h-4 w-4" />
                           Copy Key
                         </DropdownMenuItem>
+                         <DropdownMenuSeparator />
                          <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-yellow-500 focus:text-yellow-400 focus:bg-yellow-950/50">
@@ -168,23 +188,19 @@ export default function KeysPage() {
         </CardContent>
       </Card>
       <GenerateKeyDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        open={isGenerateDialogOpen}
+        onOpenChange={setIsGenerateDialogOpen}
         onKeyGenerated={handleKeyGenerated}
       />
+      {selectedKey && (
+         <EditKeyDialog
+            key={selectedKey.id}
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            onKeyUpdated={handleKeyUpdated}
+            apiKey={selectedKey}
+        />
+      )}
     </div>
   );
 }
-
-// Dummy Card component to satisfy compiler
-const Card = ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-    <div className="rounded-lg border bg-card text-card-foreground shadow-sm" {...props}>
-        {children}
-    </div>
-);
-
-const CardContent = ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-    <div className="p-6" {...props}>
-        {children}
-    </div>
-);
