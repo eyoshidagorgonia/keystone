@@ -11,6 +11,9 @@ COPY package*.json ./
 # Install npm dependencies
 RUN npm install
 
+# Ensure the public directory exists, even if it's empty in the source repo
+RUN mkdir -p public
+
 # Copy the rest of the application code
 COPY . .
 
