@@ -33,7 +33,7 @@ async function getHttpsOptions() {
         key: keys.serviceKey,
         cert: keys.certificate,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to generate SSL certificate:', error.message);
     return null;
   }
@@ -62,7 +62,7 @@ async function main() {
   }
 }
 
-main().catch((err) => {
+main().catch((err: any) => {
   console.error(err);
   process.exit(1);
 });
