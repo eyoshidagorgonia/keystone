@@ -1,37 +1,27 @@
-# Use a specific Node.js version for reproducibility
+# Use a base image with Node.js and OpenSSL
 FROM node:20-slim
 
 # Set the working directory
 WORKDIR /usr/src/app
 
-# Install necessary dependencies:
-# - git: for cloning the repository
-# - openssl: for the 'pem' package to generate self-signed certs
-RUN apt-get update && apt-get install -y openssl git && rm -rf /var/lib/apt/lists/*
+# Install git and openssl
+RUN apt-get update && apt-get install -y git openssl && rm -rf /var/lib/apt/get/lists/*
 
-# Arguments for the Git repository
+# Arguments for the Git repository and branch
 ARG GIT_REPO_URL
 ARG GIT_BRANCH=main
 
-# Clone the repository and checkout the specified branch
-RUN git clone --branch ${GIT_BRANCH} ${GIT_REPO_URL} .
+# Clone the specified branch of the repository
+RUN git clone --single-branch --branch ${GIT_BRANCH} ${GIT_REPO_URL} .
 
-# Install npm dependencies
+# Install dependencies
 RUN npm install
 
-# Copy the data directory if it exists locally, otherwise create it
-# This ensures the volume mount point exists.
-RUN mkdir -p /usr/src/app/data
-
-# Build the Next.js application
+# Build the Next.js app
 RUN npm run build
 
 # Expose the port the app will run on
-# The actual port will be set by the environment variable in docker-compose
-EXPOSE 9002
 EXPOSE 9003
-EXPOSE 4000
-EXPOSE 3400
 
-# The command to run the application will be provided by docker-compose.yml
+# Set the command to start the server
 CMD ["npm", "run", "dev"]
