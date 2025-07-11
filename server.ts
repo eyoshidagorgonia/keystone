@@ -3,8 +3,11 @@ import { createServer as createHttpServer } from 'http';
 import { createServer as createHttpsServer } from 'https';
 import { parse } from 'url';
 import next from 'next';
-import { createCertificate, SslInformation, checkOpenSSL } from 'pem';
+import pem from 'pem';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
+
+const { createCertificate, checkOpenSSL } = pem;
+type SslInformation = pem.SslInformation;
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -25,7 +28,12 @@ async function getHttpsOptions() {
     };
   }
 
-  const opensslExists = await checkOpenSSL();
+  const opensslExists = await new Promise<boolean>((resolve) => {
+    checkOpenSSL((err, result) => {
+        resolve(result);
+    });
+  });
+
   if (!opensslExists) {
     console.warn('OpenSSL not found. Cannot generate certificate. Starting in HTTP mode.');
     return null;
