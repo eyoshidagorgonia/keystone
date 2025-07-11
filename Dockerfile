@@ -1,47 +1,26 @@
-# Use a specific Node.js version as a base image
-FROM node:20-alpine as base
+# 1. Base Image
+FROM node:20-slim
 
-# Set the working directory
-WORKDIR /usr/src/app
-
-# Install dependencies required for the build process, including git
-RUN apk add --no-cache openssl git
-
-# Define build arguments for the Git repository
+# 2. Set Build Arguments
 ARG GIT_REPO_URL
 ARG GIT_BRANCH=main
 
-# Clone the repository
+# 3. Install Dependencies
+# Install git to clone the repo, and openssl for the dev server's certificate generation.
+RUN apt-get update && apt-get install -y git openssl
+
+# 4. Clone Repository
+WORKDIR /usr/src/app
 RUN git clone --branch ${GIT_BRANCH} ${GIT_REPO_URL} .
 
-# Install npm dependencies
+# 5. Install Node.js Dependencies
 RUN npm install
 
-# Copy the rest of the application code (if any additional files are needed)
-# This step is often included but might be redundant if everything is in git
-COPY . .
-
-# Build the Next.js application
-RUN npm run build
-
-# Start a new, smaller image for the final production build
-FROM node:20-alpine
-
-WORKDIR /usr/src/app
-
-# Copy dependencies and build output from the base image
-COPY --from=base /usr/src/app/node_modules ./node_modules
-COPY --from=base /usr/src/app/.next ./.next
-COPY --from=base /usr/src/app/public ./public
-COPY --from=base /usr/src/app/package.json .
-COPY --from=base /usr/src/app/server.ts .
-COPY --from=base /usr/src/app/next.config.ts .
-COPY --from=base /usr/src/app/data ./data
-
-# Expose the port the app runs on
-# The default port is 9002, but we use an environment variable
+# 6. Set up environment
+# Expose the default port for the application.
+# This will be overridden by the PORT env var in docker-compose.yml or docker run.
 EXPOSE 9002
 
-# The command to start the server
-# This will be overridden by docker-compose for different modes
+# 7. Define the Command to Run the App
+# This command will be used if no other command is specified in 'docker run' or 'docker-compose'.
 CMD ["npm", "run", "dev"]
