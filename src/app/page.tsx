@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -32,7 +33,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { apiKeys, usageStats } from "@/lib/data"
+import { usageStats } from "@/lib/data"
+import { getApiKeys } from "@/lib/apiKeyService"
 import { ApiKey } from "@/types"
 
 const chartConfig = {
@@ -43,6 +45,16 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export default function DashboardPage() {
+  const [apiKeys, setApiKeys] = React.useState<ApiKey[]>([]);
+
+  React.useEffect(() => {
+    async function fetchKeys() {
+        const keys = await getApiKeys();
+        setApiKeys(keys);
+    }
+    fetchKeys();
+  }, []);
+
   const recentKeys = [...apiKeys].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
 
   return (

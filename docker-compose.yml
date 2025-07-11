@@ -12,6 +12,7 @@ services:
       - .:/usr/src/app
       - /usr/src/app/node_modules
       - /usr/src/app/.next
+      - keystone_data:/usr/src/app/data
     # This command starts both the Next.js dev server and the Genkit server
     command: >
       sh -c "npm run genkit:dev & npm run dev"
@@ -19,3 +20,6 @@ services:
     # services running on the host machine (like Ollama).
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+volumes:
+  keystone_data:

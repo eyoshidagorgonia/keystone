@@ -1,3 +1,4 @@
+
 "use client"
 
 import {
@@ -26,6 +27,7 @@ import type { ApiKey } from "@/types"
 import { toast } from "@/hooks/use-toast"
 import { useState } from "react"
 import { Copy, Check } from "lucide-react"
+import { createApiKey } from "@/app/keys/actions"
 
 interface GenerateKeyDialogProps {
   open: boolean
@@ -50,21 +52,10 @@ export function GenerateKeyDialog({ open, onOpenChange, onKeyGenerated }: Genera
     },
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    const newKeyString = `ks_ollama_${[...Array(32)].map(() => Math.random().toString(36)[2]).join('')}`
-    setGeneratedKey(newKeyString)
-
-    const newKey: ApiKey = {
-      id: `key_${Date.now()}`,
-      name: values.name,
-      key: newKeyString,
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      lastUsed: null,
-      usage: 0,
-      rateLimit: values.rateLimit,
-    }
-    onKeyGenerated(newKey)
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const newKey = await createApiKey(values.name, values.rateLimit);
+    setGeneratedKey(newKey.key);
+    onKeyGenerated(newKey);
     toast({
         title: "API Key Generated",
         description: `Key "${values.name}" has been successfully created.`,

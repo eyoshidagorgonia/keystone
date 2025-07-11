@@ -26,6 +26,7 @@ import {
 import type { ApiKey } from "@/types"
 import { toast } from "@/hooks/use-toast"
 import { useEffect } from "react"
+import { updateApiKey } from "@/app/keys/actions"
 
 interface EditKeyDialogProps {
   open: boolean
@@ -53,11 +54,12 @@ export function EditKeyDialog({ open, onOpenChange, onKeyUpdated, apiKey }: Edit
   }, [apiKey, form]);
 
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     const updatedKey: ApiKey = {
       ...apiKey,
       name: values.name,
     }
+    await updateApiKey(updatedKey);
     onKeyUpdated(updatedKey);
     toast({
         title: "API Key Updated",
