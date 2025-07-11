@@ -42,14 +42,14 @@ export default function DocumentationPage() {
         <CardContent className="space-y-4">
             <p>Your API endpoint is:</p>
             <CodeBlock language="text">
-                {`https://localhost:9002/api/v1/proxy`}
+                {`http://localhost:9002/api/v1/proxy`}
             </CodeBlock>
             <p>
               To interact with the Ollama API, append the standard Ollama path to the proxy endpoint. For example, to generate content, you would post to `/generate`.
             </p>
             <h3 className="font-semibold pt-4">Example: cURL Request</h3>
             <CodeBlock language="bash">
-{`curl https://localhost:9002/api/v1/proxy/generate \\
+{`curl http://localhost:9002/api/v1/proxy/generate \\
   -X POST \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -57,8 +57,7 @@ export default function DocumentationPage() {
     "model": "llama3",
     "prompt": "Why is the sky blue?",
     "stream": false
-  }' \\
-  --insecure # Use this flag for self-signed certificates`}
+  }'`}
             </CodeBlock>
 
             <h3 className="font-semibold pt-4">Example: Python Request</h3>
@@ -67,7 +66,7 @@ export default function DocumentationPage() {
 import json
 
 api_key = "YOUR_API_KEY"
-proxy_url = "https://localhost:9002/api/v1/proxy/generate"
+proxy_url = "http://localhost:9002/api/v1/proxy/generate"
 
 headers = {
     "Content-Type": "application/json",
@@ -80,9 +79,7 @@ data = {
     "stream": False
 }
 
-# For self-signed certificates, you may need to disable SSL verification
-# In production, you should use a proper certificate authority
-response = requests.post(proxy_url, headers=headers, data=json.dumps(data), verify=False)
+response = requests.post(proxy_url, headers=headers, data=json.dumps(data))
 
 if response.status_code == 200:
     print(response.json())
@@ -94,10 +91,9 @@ else:
              <h3 className="font-semibold pt-4">Example: Node.js (axios) Request</h3>
             <CodeBlock language="javascript">
 {`const axios = require('axios');
-const https = require('https');
 
 const apiKey = 'YOUR_API_KEY';
-const proxyUrl = 'https://localhost:9002/api/v1/proxy/generate';
+const proxyUrl = 'http://localhost:9002/api/v1/proxy/generate';
 
 const headers = {
     'Content-Type': 'application/json',
@@ -110,14 +106,7 @@ const data = {
     stream: false
 };
 
-// For self-signed certificates, you may need to create an https agent
-// to bypass the certificate validation.
-const agent = new https.Agent({
-  rejectUnauthorized: false
-});
-
-
-axios.post(proxyUrl, data, { headers, httpsAgent: agent })
+axios.post(proxyUrl, data, { headers })
     .then(response => {
         console.log(response.data);
     })
