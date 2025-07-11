@@ -14,6 +14,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  if (process.env.KEYSTONE_MODE === 'api') {
+      return (
+         <html lang="en" className="dark" style={{ colorScheme: "dark" }}>
+            <body>
+                {children}
+            </body>
+        </html>
+      )
+  }
+
   return (
     <html lang="en" className="dark" style={{ colorScheme: "dark" }}>
       <head>
