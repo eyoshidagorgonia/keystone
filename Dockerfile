@@ -4,15 +4,15 @@ FROM node:20-alpine as base
 # Set the working directory
 WORKDIR /usr/src/app
 
+# Create a public directory if it doesn't exist to prevent copy errors
+RUN mkdir -p public
+
 # The build context is the Git repository, so we can copy the files directly
 # Copy package.json and package-lock.json (if available)
 COPY package*.json ./
 
 # Install npm dependencies
 RUN npm install
-
-# Ensure the public directory exists, even if it's empty in the source repo
-RUN mkdir -p public
 
 # Copy the rest of the application code
 COPY . .
@@ -44,4 +44,4 @@ COPY --from=base /usr/src/app/package.json .
 EXPOSE 9002
 
 # The command to start the server in production mode
-CMD ["npm", "run", "dev"]
+CMD ["npm", "start"]
