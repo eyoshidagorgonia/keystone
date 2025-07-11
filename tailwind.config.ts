@@ -11,7 +11,7 @@ export default {
     extend: {
       fontFamily: {
         body: ['Inter', 'sans-serif'],
-        headline: ['Uncial Antiqua', 'serif'],
+        headline: ['EB Garamond', 'serif'],
         code: ['monospace'],
       },
       colors: {
