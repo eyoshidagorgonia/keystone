@@ -34,7 +34,8 @@ async function getLocalApiKeys(): Promise<ApiKey[]> {
       await saveLocalApiKeys([]);
       return [];
     }
-    throw error;
+    console.error('[API Key Service] Failed to read local API keys file:', error);
+    throw new Error('Could not read local API keys. Please check file permissions and existence of data/apiKeys.json.');
   }
 }
 
@@ -44,7 +45,7 @@ async function saveLocalApiKeys(keys: ApiKey[]): Promise<void> {
     await fs.writeFile(DATA_FILE_PATH, JSON.stringify(keys, null, 2), 'utf-8');
   } catch (error) {
      console.error('[API Key Service] Failed to save local API keys:', error);
-     throw error;
+     throw new Error('Could not save local API keys. Please check file permissions for the data directory.');
   }
 }
 
