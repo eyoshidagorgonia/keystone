@@ -18,7 +18,7 @@ export default function RootLayout({
   // This layout is for the admin UI. A separate layout is not needed for the API-only mode
   // as no pages will be rendered.
   return (
-    <html lang="en" className="dark" style={{ colorScheme: "dark" }}>
+    <html lang="en" className="dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
