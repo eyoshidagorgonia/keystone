@@ -4,6 +4,7 @@ services:
   admin-ui:
     build:
       context: .
+      dockerfile: Dockerfile
       args:
         KEYSTONE_MODE: admin
     container_name: keystone_admin_ui
@@ -14,12 +15,14 @@ services:
     environment:
       - KEYSTONE_MODE=admin
       - PORT=9002
+    command: ["npm", "run", "start"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
   api-proxy:
     build:
       context: .
+      dockerfile: Dockerfile
       args:
         KEYSTONE_MODE: api
     container_name: keystone_api_proxy
@@ -30,6 +33,7 @@ services:
     environment:
       - KEYSTONE_MODE=api
       - PORT=9003
+    command: ["npm", "run", "start"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
