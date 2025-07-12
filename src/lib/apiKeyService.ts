@@ -3,25 +3,67 @@
 
 import { db } from './firestoreClient';
 import type { ApiKey } from '@/types';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 const KEYS_COLLECTION = 'apiKeys';
+const DATA_FILE_PATH = path.join(process.cwd(), 'data', 'apiKeys.json');
+
+let useFirestore = true;
 
 async function getKeysCollection() {
-  return db.collection(KEYS_COLLECTION);
+  if (!useFirestore) throw new Error('Firestore is disabled.');
+  try {
+    // Perform a quick check to see if we can access the DB.
+    await db.collection(KEYS_COLLECTION).limit(1).get();
+    return db.collection(KEYS_COLLECTION);
+  } catch (error) {
+    console.warn('[API Key Service] Firestore is unavailable, falling back to local JSON file.', error);
+    useFirestore = false;
+    throw new Error('Firestore is disabled.');
+  }
 }
 
-export async function getApiKeys(): Promise<ApiKey[]> {
-  const collection = await getKeysCollection();
-  const snapshot = await collection.orderBy('createdAt', 'desc').get();
-  if (snapshot.empty) {
-    console.log('[API Key Service] No API keys found in Firestore.');
-    return [];
+async function getLocalApiKeys(): Promise<ApiKey[]> {
+  try {
+    const fileContent = await fs.readFile(DATA_FILE_PATH, 'utf-8');
+    return JSON.parse(fileContent);
+  } catch (error: any) {
+    if (error.code === 'ENOENT') {
+      console.log('[API Key Service] Data file not found. Creating a new one.');
+      await saveLocalApiKeys([]);
+      return [];
+    }
+    throw error;
   }
-  return snapshot.docs.map(doc => doc.data() as ApiKey);
+}
+
+async function saveLocalApiKeys(keys: ApiKey[]): Promise<void> {
+  try {
+    await fs.mkdir(path.dirname(DATA_FILE_PATH), { recursive: true });
+    await fs.writeFile(DATA_FILE_PATH, JSON.stringify(keys, null, 2), 'utf-8');
+  } catch (error) {
+     console.error('[API Key Service] Failed to save local API keys:', error);
+     throw error;
+  }
+}
+
+
+export async function getApiKeys(): Promise<ApiKey[]> {
+  if (useFirestore) {
+    try {
+      const collection = await getKeysCollection();
+      const snapshot = await collection.orderBy('createdAt', 'desc').get();
+      if (snapshot.empty) return [];
+      return snapshot.docs.map(doc => doc.data() as ApiKey);
+    } catch (e) {
+      // Fallback on error
+    }
+  }
+  return getLocalApiKeys();
 }
 
 export async function addApiKey(keyData: { name: string; rateLimit: number }): Promise<ApiKey> {
-  const collection = await getKeysCollection();
   const newKey: ApiKey = {
     id: `key_${Date.now()}`,
     name: keyData.name,
@@ -32,40 +74,72 @@ export async function addApiKey(keyData: { name: string; rateLimit: number }): P
     usage: 0,
     rateLimit: keyData.rateLimit,
   };
+
+  if (useFirestore) {
+    try {
+      const collection = await getKeysCollection();
+      await collection.doc(newKey.id).set(newKey);
+      return newKey;
+    } catch (e) {
+      // Fallback on error
+    }
+  }
   
-  await collection.doc(newKey.id).set(newKey);
-  console.log(`[API Key Service] Added new key to Firestore: "${newKey.name}"`);
+  const keys = await getLocalApiKeys();
+  keys.unshift(newKey);
+  await saveLocalApiKeys(keys);
   return newKey;
 }
 
 export async function updateApiKey(updatedKey: ApiKey): Promise<void> {
-    const collection = await getKeysCollection();
-    const keyRef = collection.doc(updatedKey.id);
-    
-    // Check if the document exists before updating
-    const doc = await keyRef.get();
-    if (!doc.exists) {
-        throw new Error('API Key not found in Firestore');
+  if (useFirestore) {
+    try {
+      const collection = await getKeysCollection();
+      const keyRef = collection.doc(updatedKey.id);
+      await keyRef.update(updatedKey as { [key: string]: any });
+      return;
+    } catch (e) {
+        // Fallback on error
     }
+  }
 
-    await keyRef.update(updatedKey);
-    console.log(`[API Key Service] Updated key in Firestore: "${updatedKey.name}"`);
+  const keys = await getLocalApiKeys();
+  const index = keys.findIndex(k => k.id === updatedKey.id);
+  if (index !== -1) {
+    keys[index] = updatedKey;
+    await saveLocalApiKeys(keys);
+  }
 }
 
 export async function deleteApiKey(keyId: string): Promise<void> {
-    const collection = await getKeysCollection();
-    await collection.doc(keyId).delete();
-    console.log(`[API Key Service] Deleted key from Firestore with ID: "${keyId}"`);
+    if (useFirestore) {
+        try {
+            const collection = await getKeysCollection();
+            await collection.doc(keyId).delete();
+            return;
+        } catch(e) {
+            // fallback
+        }
+    }
+    const keys = await getLocalApiKeys();
+    const filteredKeys = keys.filter(k => k.id !== keyId);
+    await saveLocalApiKeys(filteredKeys);
 }
 
-// The following functions now read-then-write, which is standard for this type of operation.
 export async function saveApiKeys(keys: ApiKey[]): Promise<void> {
-  const collection = await getKeysCollection();
-  const batch = db.batch();
-  keys.forEach(key => {
-    const docRef = collection.doc(key.id);
-    batch.set(docRef, key);
-  });
-  await batch.commit();
-  console.log(`[API Key Service] Saved ${keys.length} keys to Firestore.`);
+    if (useFirestore) {
+        try {
+            const collection = await getKeysCollection();
+            const batch = db.batch();
+            keys.forEach(key => {
+                const docRef = collection.doc(key.id);
+                batch.set(docRef, key);
+            });
+            await batch.commit();
+            return;
+        } catch (e) {
+            // fallback
+        }
+    }
+    await saveLocalApiKeys(keys);
 }
