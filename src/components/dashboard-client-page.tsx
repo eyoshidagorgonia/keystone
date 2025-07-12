@@ -6,7 +6,9 @@ import {
   KeyRound,
   Server,
   AlertTriangle,
+  Clock,
 } from "lucide-react"
+import { formatDistanceToNow } from 'date-fns';
 import type { ChartConfig } from "@/components/ui/chart"
 import {
   Card,
@@ -32,8 +34,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { getUsageMetrics } from "@/app/keys/actions";
-import { ApiKey, UsageStat } from "@/types"
+import { getUsageMetrics, fetchRecentConnections } from "@/app/keys/actions";
+import { ApiKey, UsageStat, ConnectionLog } from "@/types"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 const chartConfig = {
   requests: {
@@ -45,12 +49,14 @@ const chartConfig = {
 export function DashboardClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
   const [apiKeys, setApiKeys] = React.useState<ApiKey[]>(initialKeys);
   const [usageStats, setUsageStats] = React.useState<UsageStat[]>([]);
+  const [recentConnections, setRecentConnections] = React.useState<ConnectionLog[]>([]);
 
   const fetchDashboardData = React.useCallback(async () => {
     try {
-      const [keysResponse, metricsResponse] = await Promise.all([
+      const [keysResponse, metricsResponse, connectionsResponse] = await Promise.all([
         fetch('/api/v1/keys'),
-        getUsageMetrics() 
+        getUsageMetrics(),
+        fetchRecentConnections(),
       ]);
       
       if (keysResponse.ok) {
@@ -59,6 +65,8 @@ export function DashboardClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
       } else {
         console.error('Failed to fetch API keys');
       }
+
+      setRecentConnections(connectionsResponse);
 
       const today = new Date();
       const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -157,8 +165,8 @@ export function DashboardClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
           </CardContent>
         </Card>
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="col-span-1 lg:col-span-1">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="col-span-1 lg:col-span-2">
           <CardHeader>
             <CardTitle className="font-headline">API Usage Trend</CardTitle>
             <CardDescription>
@@ -199,7 +207,42 @@ export function DashboardClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
             </ChartContainer>
           </CardContent>
         </Card>
-        <Card>
+         <Card>
+          <CardHeader>
+            <CardTitle className="font-headline">Recent Connections</CardTitle>
+            <CardDescription>
+              The last 5 incoming API requests.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-4">
+                {recentConnections.map(conn => (
+                    <li key={conn.id} className="flex items-center gap-3 text-sm">
+                        <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <div className="flex-grow">
+                            <p className="font-medium">{conn.keyName}</p>
+                            <p className="text-muted-foreground text-xs">{conn.path}</p>
+                        </div>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <p className="text-muted-foreground text-xs whitespace-nowrap">
+                                        {formatDistanceToNow(new Date(conn.timestamp), { addSuffix: true })}
+                                    </p>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{new Date(conn.timestamp).toLocaleString()}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </li>
+                ))}
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+       <div className="grid gap-4">
+         <Card>
           <CardHeader>
             <CardTitle className="font-headline">Recent API Keys</CardTitle>
             <CardDescription>
@@ -231,7 +274,7 @@ export function DashboardClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
             </Table>
           </CardContent>
         </Card>
-      </div>
+       </div>
     </div>
   );
 }

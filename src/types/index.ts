@@ -13,3 +13,11 @@ export interface UsageStat {
     date: string;
     requests: number;
 }
+
+export interface ConnectionLog {
+  id: string;
+  timestamp: string;
+  keyId: string;
+  keyName: string;
+  path: string;
+}

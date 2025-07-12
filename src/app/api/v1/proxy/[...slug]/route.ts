@@ -2,12 +2,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getApiKeys, updateApiKey } from '@/lib/apiKeyService';
 import { recordUsage } from '@/lib/metricsService';
+import { recordConnection } from '@/lib/connectionLogService';
 
 
 const OLLAMA_TARGET_URL = process.env.OLLAMA_TARGET_URL || 'http://host.docker.internal:11434';
 const FORCED_MODEL = 'llama3.1:8b';
 
-async function handleProxyRequest(req: NextRequest, { params }: { params: { slug: string[] } }) {
+async function handleProxyRequest(req: NextRequest, { params }: { params: { slug:string[] } }) {
   const path = params.slug.join('/');
   console.log(`[Proxy] Received ${req.method} request for /${path}`);
 
@@ -30,6 +31,15 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
     }
     
     console.log(`[Proxy] API key validated successfully for key name: "${keyDetails.name}"`);
+
+    // Asynchronously record the connection without blocking the response
+    recordConnection({ 
+        keyId: keyDetails.id, 
+        keyName: keyDetails.name, 
+        path: `/api/${path}` 
+    }).catch(err => {
+        console.error(`[Proxy] Failed to record connection for key ${keyDetails.id}:`, err);
+    });
 
     // Ollama endpoints are prefixed with /api
     const targetUrl = new URL(`${OLLAMA_TARGET_URL}/api/${path}`);
@@ -60,7 +70,7 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
     }
     
     // Asynchronously record usage without blocking the response
-    const recordPromise = recordUsage(keyDetails.id).catch(err => {
+    recordUsage(keyDetails.id).catch(err => {
         console.error(`[Proxy] Failed to record usage for key ${keyDetails.id}:`, err);
     });
 

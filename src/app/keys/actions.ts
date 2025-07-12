@@ -9,7 +9,8 @@ import {
   deleteApiKey as deleteApiKeyFromStore,
 } from '@/lib/apiKeyService'
 import { getMetrics } from '@/lib/metricsService'
-import type { ApiKey, UsageStat } from '@/types'
+import { getRecentConnections } from '@/lib/connectionLogService'
+import type { ApiKey, UsageStat, ConnectionLog } from '@/types'
 
 export async function createApiKey(name: string, rateLimit: number): Promise<ApiKey> {
   const newKey = await addApiKey({ name, rateLimit });
@@ -36,4 +37,8 @@ export async function revokeApiKey(keyId: string): Promise<void> {
 
 export async function getUsageMetrics(): Promise<UsageStat[]> {
     return await getMetrics();
+}
+
+export async function fetchRecentConnections(): Promise<ConnectionLog[]> {
+    return await getRecentConnections();
 }
