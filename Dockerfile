@@ -1,53 +1,58 @@
-# Use a specific Node.js version as a base image for the builder stage
-FROM node:20-alpine as base
-
-# Install openssl for the pem package
-RUN apk add --no-cache openssl
-
-# Set the working directory
+# Stage 1: Base image with build dependencies
+FROM node:20-alpine AS base
 WORKDIR /usr/src/app
 
-# Create a public directory if it doesn't exist, to prevent build errors
-RUN mkdir -p public
+# Install dependencies needed for native modules
+RUN apk add --no-cache libc6-compat python3 make g++
 
-# The build context is the Git repository, so we can copy the files directly
 # Copy package.json and package-lock.json (if available)
 COPY package*.json ./
 
-# Install npm dependencies
-RUN npm install
+# Stage 2: Install production dependencies
+FROM base AS deps
+# Install production dependencies
+RUN npm install --omit=dev
 
+
+# Stage 3: Build the application
+FROM base AS builder
+# Copy the dependency installation from the 'deps' stage
+COPY --from=deps /usr/src/app/node_modules ./node_modules
 # Copy the rest of the application code
 COPY . .
 
-# Build the Next.js application and the custom server
+# Set build-time argument for KEYSTONE_MODE
+ARG KEYSTONE_MODE=admin
+ENV KEYSTONE_MODE=${KEYSTONE_MODE}
+
+# Build the Next.js app and the server
 RUN npm run build
 
-# ---
 
-# Start a new, smaller image for the final production build
-FROM node:20-alpine
-
-# Install openssl for the pem package to generate certs on startup
-RUN apk add --no-cache openssl
-
+# Stage 4: Production image
+FROM node:20-alpine AS runner
 WORKDIR /usr/src/app
 
-# Copy production dependencies from the builder stage
-COPY --from=base /usr/src/app/node_modules ./node_modules
-COPY --from=base /usr/src/app/package*.json ./
+# Set environment variables
+ENV NODE_ENV=production
+ARG KEYSTONE_MODE=admin
+ENV KEYSTONE_MODE=${KEYSTONE_MODE}
 
-# Copy the built application and necessary files from the base image
-COPY --from=base /usr/src/app/dist ./dist
-COPY --from=base /usr/src/app/.next ./.next
-COPY --from=base /usr/src/app/public ./public
-COPY --from=base /usr/src/app/src ./src
-COPY --from=base /usr/src/app/next.config.ts .
-COPY --from=base /usr/src/app/data ./data
-COPY --from=base /usr/src/app/apphosting.yaml .
+# Create a non-root user for security
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
+# Copy built assets from the builder stage
+COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/public ./public
+COPY --from=builder /usr/src/app/package.json ./package.json
+COPY --from=builder --chown=appuser:appgroup /usr/src/app/.next ./.next
+COPY --from=builder /usr/src/app/node_modules ./node_modules
 
 # Expose the port the app runs on
-EXPOSE 9002
+# The actual port will be mapped in docker-compose.yml
+EXPOSE 3000
 
-# The command to start the server in production mode
+# The CMD will be overridden by the command in docker-compose.yml
+# but we provide a default here for clarity.
 CMD ["npm", "run", "start"]
