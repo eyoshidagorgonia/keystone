@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -33,8 +32,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { usageStats } from "@/lib/data"
-import { ApiKey } from "@/types"
+import { getUsageMetrics } from "@/app/keys/actions";
+import { ApiKey, UsageStat } from "@/types"
 
 const chartConfig = {
   requests: {
@@ -45,32 +44,55 @@ const chartConfig = {
 
 export function DashboardClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
   const [apiKeys, setApiKeys] = React.useState<ApiKey[]>(initialKeys);
+  const [usageStats, setUsageStats] = React.useState<UsageStat[]>([]);
 
-  React.useEffect(() => {
-    const fetchKeys = async () => {
-      try {
-        const response = await fetch('/api/v1/keys');
-        if (!response.ok) {
-          // Don't throw an error, just log it, so the UI doesn't break
-          console.error('Failed to fetch API keys');
-          return;
-        }
-        const keys = await response.json();
+  const fetchDashboardData = React.useCallback(async () => {
+    try {
+      const [keysResponse, metricsResponse] = await Promise.all([
+        fetch('/api/v1/keys'),
+        getUsageMetrics() 
+      ]);
+      
+      if (keysResponse.ok) {
+        const keys = await keysResponse.json();
         setApiKeys(keys);
-      } catch (e: any) {
-        console.error("Could not load API keys. " + e.message);
+      } else {
+        console.error('Failed to fetch API keys');
       }
-    };
 
-    const intervalId = setInterval(fetchKeys, 5000); // Fetch every 5 seconds
+      const today = new Date();
+      const last7Days = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        return d.toISOString().split('T')[0];
+      }).reverse();
 
-    // Clear interval on component unmount
-    return () => clearInterval(intervalId);
+      const processedMetrics = last7Days.map(date => {
+        const found = metricsResponse.find(m => m.date === date);
+        return {
+          date: date,
+          requests: found ? found.requests : 0,
+        };
+      });
+
+      setUsageStats(processedMetrics);
+
+    } catch (e: any) {
+      console.error("Could not load dashboard data. " + e.message);
+    }
   }, []);
 
 
+  React.useEffect(() => {
+    fetchDashboardData();
+    const intervalId = setInterval(fetchDashboardData, 5000); // Fetch every 5 seconds
+
+    return () => clearInterval(intervalId);
+  }, [fetchDashboardData]);
+
+
   const recentKeys = [...apiKeys].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
-  const totalRequests = apiKeys.reduce((acc, key) => acc + key.usage, 0);
+  const totalRequests = usageStats.reduce((acc, stat) => acc + stat.requests, 0);
   const activeKeysCount = apiKeys.filter(key => key.status === 'active').length;
 
   return (
@@ -111,7 +133,7 @@ export function DashboardClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Total Requests (30d)
+              Total Requests (7d)
             </CardTitle>
             <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
