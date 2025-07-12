@@ -39,3 +39,4 @@ services:
 
 volumes:
   keystone_data:
+    driver: local
