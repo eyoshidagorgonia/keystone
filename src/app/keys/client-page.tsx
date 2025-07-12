@@ -37,6 +37,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { deleteApiKey, revokeApiKey } from "./actions";
+import { cn } from "@/lib/utils";
 
 
 export function KeysClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
