@@ -1,40 +1,40 @@
-# Stage 1: Base image with build dependencies
-FROM node:20-alpine AS base
+# Stage 1: Builder
+FROM node:20-alpine AS builder
+
 WORKDIR /usr/src/app
 
-# Install dependencies needed for native modules
+# Install build dependencies
 RUN apk add --no-cache libc6-compat python3 make g++
 
-# Copy package.json and package-lock.json (if available)
+# Copy configuration files
 COPY package*.json ./
+COPY tsconfig.json ./
+COPY tsconfig.server.json ./
+COPY tailwind.config.ts ./
+COPY next.config.ts ./
+COPY components.json ./
 
-# Stage 2: Install production dependencies
-FROM base AS deps
-# Install production dependencies
-RUN npm install --omit=dev
+# Install ALL dependencies (including devDependencies for the build)
+RUN npm install
 
-
-# Stage 3: Build the application
-FROM base AS builder
-# Copy the dependency installation from the 'deps' stage
-COPY --from=deps /usr/src/app/node_modules ./node_modules
-# Copy the rest of the application code
+# Copy the rest of the application source code
 COPY . .
-
-# Set build-time argument for KEYSTONE_MODE
-ARG KEYSTONE_MODE=admin
-ENV KEYSTONE_MODE=${KEYSTONE_MODE}
 
 # Build the Next.js app and the server
 RUN npm run build
 
+# Prune development dependencies for the final image
+RUN npm prune --omit=dev
 
-# Stage 4: Production image
+
+# Stage 2: Production Runner
 FROM node:20-alpine AS runner
+
 WORKDIR /usr/src/app
 
-# Set environment variables
 ENV NODE_ENV=production
+
+# Set build-time argument for KEYSTONE_MODE
 ARG KEYSTONE_MODE=admin
 ENV KEYSTONE_MODE=${KEYSTONE_MODE}
 
@@ -42,17 +42,18 @@ ENV KEYSTONE_MODE=${KEYSTONE_MODE}
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
-# Copy built assets from the builder stage
+# Copy the pruned node_modules from the builder stage
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+# Copy built server assets
 COPY --from=builder /usr/src/app/dist ./dist
+# Copy built Next.js assets
+COPY --from=builder --chown=appuser:appgroup /usr/src/app/.next ./.next
+# Copy public assets and package.json
 COPY --from=builder /usr/src/app/public ./public
 COPY --from=builder /usr/src/app/package.json ./package.json
-COPY --from=builder --chown=appuser:appgroup /usr/src/app/.next ./.next
-COPY --from=builder /usr/src/app/node_modules ./node_modules
 
-# Expose the port the app runs on
 # The actual port will be mapped in docker-compose.yml
-EXPOSE 3000
+EXPOSE 9002
+EXPOSE 9003
 
-# The CMD will be overridden by the command in docker-compose.yml
-# but we provide a default here for clarity.
-CMD ["npm", "run", "start"]
+CMD ["node", "dist/server.js"]
