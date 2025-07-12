@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  admin-ui:
+    build:
+      context: .
+      args:
+        KEYSTONE_MODE: admin
+    container_name: keystone_admin_ui
+    ports:
+      - "9002:9002"
+    volumes:
+      - keystone_data:/usr/src/app/data
+    environment:
+      - KEYSTONE_MODE=admin
+      - PORT=9002
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  api-proxy:
+    build:
+      context: .
+      args:
+        KEYSTONE_MODE: api
+    container_name: keystone_api_proxy
+    ports:
+      - "9003:9003"
+    volumes:
+      - keystone_data:/usr/src/app/data
+    environment:
+      - KEYSTONE_MODE=api
+      - PORT=9003
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  keystone_data:
+    driver: local
