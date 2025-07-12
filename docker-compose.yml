@@ -11,7 +11,7 @@ services:
       - .:/usr/src/app
       # Use an anonymous volume to prevent host node_modules from overwriting container's
       - /usr/src/app/node_modules
-      # Use a named volume for persistent API key data
+      # Use a named volume for persistent API key data, this will override the sub-directory from the host mount
       - keystone_data:/usr/src/app/data
     environment:
       - KEYSTONE_MODE=admin
@@ -32,7 +32,7 @@ services:
       - .:/usr/src/app
       # Use an anonymous volume to prevent host node_modules from overwriting container's
       - /usr/src/app/node_modules
-      # Use a named volume for persistent API key data
+      # Use a named volume for persistent API key data, this will override the sub-directory from the host mount
       - keystone_data:/usr/src/app/data
     environment:
       - KEYSTONE_MODE=api
