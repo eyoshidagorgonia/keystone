@@ -1,5 +1,15 @@
 [
   {
+    "id": "key_1752302608281",
+    "name": "mjk",
+    "key": "ks_ollama_ez6mlteou2vuahvan5g5kes2ucuzqwm9",
+    "status": "active",
+    "createdAt": "2025-07-12T06:43:28.281Z",
+    "lastUsed": null,
+    "usage": 0,
+    "rateLimit": 100
+  },
+  {
     "id": "key_1",
     "name": "WebApp Production",
     "key": "ks_ollama_prod_xxxxxxxxxxxxxxxxxxxxxx_a1b2",
