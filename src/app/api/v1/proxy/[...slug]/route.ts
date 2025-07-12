@@ -4,9 +4,9 @@ import { getApiKeys } from '@/lib/apiKeyService';
 
 const OLLAMA_TARGET_URL = process.env.OLLAMA_TARGET_URL || 'http://host.docker.internal:11434';
 
-export async function POST(req: NextRequest, { params }: { params: { slug: string[] } }) {
+async function handleProxyRequest(req: NextRequest, { params }: { params: { slug: string[] } }) {
   const path = params.slug.join('/');
-  console.log(`[Proxy] Received POST request for /${path}`);
+  console.log(`[Proxy] Received ${req.method} request for /${path}`);
 
   try {
     const authorization = req.headers.get('Authorization');
@@ -28,13 +28,14 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     
     console.log(`[Proxy] API key validated successfully for key name: "${keyDetails.name}"`);
 
-    const targetUrl = new URL(`${OLLAMA_TARGET_URL}/${path}`);
+    // Ollama endpoints are prefixed with /api
+    const targetUrl = new URL(`${OLLAMA_TARGET_URL}/api/${path}`);
     console.log(`[Proxy] Forwarding request to target: ${targetUrl.toString()}`);
 
     const body = await req.json();
 
     const response = await fetch(targetUrl, {
-      method: 'POST',
+      method: req.method,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -43,18 +44,30 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
 
     console.log(`[Proxy] Received response with status ${response.status} from target.`);
     
+    // Check if the response was successful. If not, forward the error response as text.
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Proxy] Target returned an error: ${errorText}`);
+        return new NextResponse(errorText, { status: response.status, headers: { 'Content-Type': 'text/plain' } });
+    }
+
     const data = await response.json();
     
     return NextResponse.json(data, { status: response.status });
 
   } catch (error: any) {
-    console.error('[Proxy] Internal Server Error:', error.message);
+    // This will catch errors from our proxy logic, like failing to parse the incoming request body
+    console.error(`[Proxy] Internal Server Error:`, error.message);
+    if (error instanceof SyntaxError) {
+        return NextResponse.json({ error: 'Invalid JSON in request body', details: error.message }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
   }
 }
 
-export async function GET(req: NextRequest, { params }: { params: { slug: string[] } }) {
-    const path = params.slug.join('/');
-    console.log(`[Proxy] Received GET request for /${path}. Method not allowed.`);
-    return NextResponse.json({ error: 'GET method not supported on this proxy' }, { status: 405 });
-}
+
+export const POST = handleProxyRequest;
+export const GET = handleProxyRequest;
+export const PUT = handleProxyRequest;
+export const DELETE = handleProxyRequest;
+export const PATCH = handleProxyRequest;
