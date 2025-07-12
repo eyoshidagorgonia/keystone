@@ -9,19 +9,13 @@ services:
         KEYSTONE_MODE: admin
     container_name: keystone_admin_ui
     ports:
-      - "9002:9002" # Next.js Admin UI
+      - "9002:9002"
     volumes:
-      # Mount local code for development, but keep data persistent in a volume
-      - .:/usr/src/app
-      # Use an anonymous volume to prevent host node_modules from overwriting container's
-      - /usr/src/app/node_modules
-      # Use a named volume for persistent API key data
       - keystone_data:/usr/src/app/data
     environment:
       - KEYSTONE_MODE=admin
       - PORT=9002
-    # For development, we use npm run dev to have hot-reloading
-    command: ["npm", "run", "dev"]
+    command: ["npm", "run", "start"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -33,19 +27,16 @@ services:
         KEYSTONE_MODE: api
     container_name: keystone_api_proxy
     ports:
-      - "9003:9003" # API Proxy Server
+      - "9003:9003"
     volumes:
-      # Use a named volume for persistent API key data
       - keystone_data:/usr/src/app/data
     environment:
       - KEYSTONE_MODE=api
       - PORT=9003
-    # For production, we use the optimized start script
     command: ["npm", "run", "start"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
 volumes:
-  # Define the named volume for persistent data
   keystone_data:
     driver: local
