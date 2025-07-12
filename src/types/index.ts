@@ -20,4 +20,10 @@ export interface ConnectionLog {
   keyId: string;
   keyName: string;
   path: string;
+  ip?: string;
+  userAgent?: string;
+  geo?: {
+    city?: string;
+    country?: string;
+  }
 }

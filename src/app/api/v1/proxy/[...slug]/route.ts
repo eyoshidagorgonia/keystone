@@ -36,7 +36,10 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
     recordConnection({ 
         keyId: keyDetails.id, 
         keyName: keyDetails.name, 
-        path: `/api/${path}` 
+        path: `/api/${path}`,
+        ip: req.ip,
+        userAgent: req.headers.get('user-agent') ?? undefined,
+        geo: req.geo ? { city: req.geo.city, country: req.geo.country } : undefined
     }).catch(err => {
         console.error(`[Proxy] Failed to record connection for key ${keyDetails.id}:`, err);
     });

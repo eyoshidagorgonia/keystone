@@ -32,7 +32,7 @@ async function saveConnectionLogsToFile(logs: ConnectionLog[]): Promise<void> {
   }
 }
 
-export async function recordConnection(connectionData: { keyId: string, keyName: string, path: string }): Promise<void> {
+export async function recordConnection(connectionData: Omit<ConnectionLog, 'id' | 'timestamp'>): Promise<void> {
   const newLog: ConnectionLog = {
     id: `conn_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     timestamp: new Date().toISOString(),

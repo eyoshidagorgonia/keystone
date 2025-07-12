@@ -215,28 +215,34 @@ export function DashboardClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-4">
-                {recentConnections.map(conn => (
-                    <li key={conn.id} className="flex items-center gap-3 text-sm">
-                        <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <div className="flex-grow">
-                            <p className="font-medium">{conn.keyName}</p>
-                            <p className="text-muted-foreground text-xs">{conn.path}</p>
-                        </div>
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger>
-                                    <p className="text-muted-foreground text-xs whitespace-nowrap">
-                                        {formatDistanceToNow(new Date(conn.timestamp), { addSuffix: true })}
-                                    </p>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>{new Date(conn.timestamp).toLocaleString()}</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </li>
-                ))}
+             <ul className="space-y-4">
+              {recentConnections.map(conn => (
+                <li key={conn.id} className="flex items-start gap-3 text-sm">
+                  <Clock className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                  <div className="flex-grow">
+                    <p className="font-medium">{conn.keyName}</p>
+                    <p className="text-muted-foreground text-xs truncate" title={conn.path}>
+                      {conn.path}
+                    </p>
+                     <p className="text-muted-foreground text-xs truncate" title={conn.userAgent}>
+                      <span className="font-medium text-foreground/80">{conn.ip ?? 'Unknown IP'}</span>
+                      {' '}- {conn.userAgent ?? 'Unknown client'}
+                    </p>
+                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <p className="text-muted-foreground text-xs whitespace-nowrap">
+                          {formatDistanceToNow(new Date(conn.timestamp), { addSuffix: true })}
+                        </p>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{new Date(conn.timestamp).toLocaleString()}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </li>
+              ))}
             </ul>
           </CardContent>
         </Card>
