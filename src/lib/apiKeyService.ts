@@ -17,8 +17,8 @@ async function getKeysCollection() {
     // Perform a quick check to see if we can access the DB.
     await db.collection(KEYS_COLLECTION).limit(1).get();
     return db.collection(KEYS_COLLECTION);
-  } catch (error) {
-    console.warn('[API Key Service] Firestore is unavailable, falling back to local JSON file.', error);
+  } catch (error: any) {
+    console.warn('[API Key Service] Firestore is unavailable, falling back to local JSON file.', error?.message || 'Unknown error');
     useFirestore = false;
     throw new Error('Firestore is disabled.');
   }
