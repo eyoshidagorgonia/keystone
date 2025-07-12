@@ -11,7 +11,7 @@ const mode = process.env.KEYSTONE_MODE || 'admin'; // Default to admin
 console.log(`[Server] Running in ${dev ? 'development' : 'production'} mode.`);
 console.log(`[Server] KEYSTONE_MODE: ${mode}`);
 
-
+// Initialize Next.js app with the correct directory
 const app = next({ dev, dir: '.' });
 const handle = app.getRequestHandler();
 
