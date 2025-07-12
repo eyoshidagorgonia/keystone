@@ -18,6 +18,19 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    if (process.env.KEYSTONE_MODE === 'api') {
+      return [
+        { source: '/', destination: '/api/v1/proxy', permanent: true },
+        { source: '/keys', destination: '/404', permanent: true },
+        { source: '/services', destination: '/404', permanent: true },
+        { source: '/playground', destination: '/404', permanent: true },
+        { source: '/documentation', destination: '/404', permanent: true },
+        { source: '/settings', destination: '/404', permanent: true },
+      ];
+    }
+    return [];
+  },
 };
 
 export default nextConfig;
