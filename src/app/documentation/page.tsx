@@ -13,6 +13,25 @@ export default function DocumentationPage() {
           How to integrate with the KeyStone API Proxy.
         </p>
       </header>
+       <Card>
+        <CardHeader>
+          <CardTitle className="font-headline">Getting Started</CardTitle>
+          <CardDescription>
+            How to run the services using Docker.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p>
+            The simplest way to run the Admin UI and the API Proxy is by using Docker Compose. From the root of the project directory, run the following command:
+          </p>
+          <CodeBlock language="bash">
+            {`docker-compose up --build`}
+          </CodeBlock>
+           <p>
+            This will start the Admin UI on port `9002` and the API Proxy service on port `9003`.
+          </p>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -29,11 +48,11 @@ export default function DocumentationPage() {
             {`Authorization: Bearer YOUR_API_KEY`}
           </CodeBlock>
            <p>
-            You can generate API keys from the "API Keys" tab in the dashboard.
+            You can generate API keys from the "API Keys" tab in the dashboard, which is available at `http://localhost:9002`.
           </p>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader>
           <CardTitle className="font-headline">Making Requests</CardTitle>
@@ -42,9 +61,9 @@ export default function DocumentationPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-            <p>Your API endpoint is:</p>
+            <p>Your API proxy endpoint is:</p>
             <CodeBlock language="text">
-                {`http://localhost:9002/api/v1/proxy`}
+                {`http://localhost:9003/api/v1/proxy`}
             </CodeBlock>
              <Alert>
                 <Info className="h-4 w-4" />
@@ -58,12 +77,12 @@ export default function DocumentationPage() {
             </p>
             <h3 className="font-semibold pt-4">Example: cURL Request</h3>
             <CodeBlock language="bash">
-{`curl http://localhost:9002/api/v1/proxy/generate \\
+{`curl http://localhost:9003/api/v1/proxy/generate \\
   -X POST \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -d '{
-    "model": "llama3.1:8b",
+    "model": "llama3",
     "prompt": "Why is the sky blue?",
     "stream": false
   }'`}
@@ -75,7 +94,7 @@ export default function DocumentationPage() {
 import json
 
 api_key = "YOUR_API_KEY"
-proxy_url = "http://localhost:9002/api/v1/proxy/generate"
+proxy_url = "http://localhost:9003/api/v1/proxy/generate"
 
 headers = {
     "Content-Type": "application/json",
@@ -83,7 +102,7 @@ headers = {
 }
 
 data = {
-    "model": "llama3.1:8b",
+    "model": "llama3",
     "prompt": "Why is the sky blue?",
     "stream": False
 }
@@ -102,7 +121,7 @@ else:
 {`const axios = require('axios');
 
 const apiKey = 'YOUR_API_KEY';
-const proxyUrl = 'http://localhost:9002/api/v1/proxy/generate';
+const proxyUrl = 'http://localhost:9003/api/v1/proxy/generate';
 
 const headers = {
     'Content-Type': 'application/json',
@@ -110,7 +129,7 @@ const headers = {
 };
 
 const data = {
-    model: 'llama3.1:8b',
+    model: 'llama3',
     prompt: 'Why is the sky blue?',
     stream: false
 };
@@ -128,7 +147,7 @@ axios.post(proxyUrl, data, { headers })
             <CodeBlock language="typescript">
 {`async function generateText() {
   const apiKey = 'YOUR_API_KEY';
-  const proxyUrl = 'http://localhost:9002/api/v1/proxy/generate';
+  const proxyUrl = 'http://localhost:9003/api/v1/proxy/generate';
 
   const headers = {
     'Content-Type': 'application/json',
@@ -136,7 +155,7 @@ axios.post(proxyUrl, data, { headers })
   };
 
   const body = {
-    model: 'llama3.1:8b',
+    model: 'llama3',
     prompt: 'Why is the sky blue?',
     stream: false,
   };
