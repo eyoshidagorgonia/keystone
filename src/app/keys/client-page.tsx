@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ApiKey } from "@/types";
-import { Plus, MoreVertical, Copy, Trash2, Ban, Pencil } from "lucide-react";
+import { Plus, MoreVertical, Copy, Trash2, Ban, Pencil, RefreshCw } from "lucide-react";
 import { GenerateKeyDialog } from "@/components/generate-key-dialog";
 import { EditKeyDialog } from "@/components/edit-key-dialog";
 import { toast } from "@/hooks/use-toast";
@@ -44,6 +44,24 @@ export function KeysClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = React.useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
   const [selectedKey, setSelectedKey] = React.useState<ApiKey | null>(null);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const response = await fetch('/api/v1/keys');
+      if (!response.ok) {
+        throw new Error('Failed to fetch API keys');
+      }
+      const keys = await response.json();
+      setApiKeys(keys);
+      toast({ title: "Keys Refreshed", description: "The list of API keys has been updated." });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   
   const handleKeyGenerated = (key: ApiKey) => {
      setApiKeys((prev) => [key, ...prev]);
@@ -85,10 +103,16 @@ export function KeysClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
             Manage API keys for accessing your services.
             </p>
         </div>
-        <Button onClick={() => setIsGenerateDialogOpen(true)}>
-            <Plus className="-ml-1 mr-2 h-4 w-4" />
-            Generate New Key
-        </Button>
+        <div className="flex gap-2">
+            <Button onClick={handleRefresh} variant="outline" disabled={isRefreshing}>
+                <RefreshCw className={cn("mr-2 h-4 w-4", isRefreshing && "animate-spin")} />
+                Refresh
+            </Button>
+            <Button onClick={() => setIsGenerateDialogOpen(true)}>
+                <Plus className="-ml-1 mr-2 h-4 w-4" />
+                Generate New Key
+            </Button>
+        </div>
       </header>
 
       <Card>
