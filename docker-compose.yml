@@ -7,9 +7,11 @@ services:
     ports:
       - "9002:9002" # Next.js Admin UI
     volumes:
+      # Mount local code for development, but keep data persistent in a volume
       - .:/usr/src/app
+      # Use an anonymous volume to prevent host node_modules from overwriting container's
       - /usr/src/app/node_modules
-      - /usr/src/app/.next
+      # Use a named volume for persistent API key data
       - keystone_data:/usr/src/app/data
     environment:
       - KEYSTONE_MODE=admin
@@ -26,10 +28,12 @@ services:
       - "4000:4000" # Genkit Inspector UI (optional, could be on admin-ui)
       - "3400:3400" # Genkit Flows API (optional, could be on admin-ui)
     volumes:
+      # Mount local code for development, but keep data persistent in a volume
       - .:/usr/src/app
+      # Use an anonymous volume to prevent host node_modules from overwriting container's
       - /usr/src/app/node_modules
-      - /usr/src/app/.next
-      - keystone_data:/usr/src/app/data # Shared volume for API keys
+      # Use a named volume for persistent API key data
+      - keystone_data:/usr/src/app/data
     environment:
       - KEYSTONE_MODE=api
       - PORT=9003
@@ -38,5 +42,6 @@ services:
       - "host.docker.internal:host-gateway"
 
 volumes:
+  # Define the named volume for persistent data
   keystone_data:
     driver: local

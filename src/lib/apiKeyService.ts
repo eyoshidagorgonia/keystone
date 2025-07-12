@@ -4,21 +4,24 @@ import path from 'path';
 import type { ApiKey } from '@/types';
 import { initialApiKeys } from '@/lib/initialData';
 
-const dataFilePath = path.join(process.cwd(), 'data', 'apiKeys.json');
+// This path is now relative to the container's working directory
+const dataDirPath = path.join(process.cwd(), 'data');
+const dataFilePath = path.join(dataDirPath, 'apiKeys.json');
 
 async function ensureDataFileExists() {
   try {
+    // Check if the file exists. If not, this will throw an error.
     await fs.access(dataFilePath);
   } catch (error) {
+    // If the file doesn't exist, create the directory and the file with initial data.
     console.log('[API Key Service] Data file not found. Creating a new one with initial data.');
-    await fs.mkdir(path.dirname(dataFilePath), { recursive: true });
+    await fs.mkdir(dataDirPath, { recursive: true });
     await fs.writeFile(dataFilePath, JSON.stringify(initialApiKeys, null, 2), 'utf8');
   }
 }
 
 export async function getApiKeys(): Promise<ApiKey[]> {
   await ensureDataFileExists();
-  // console.log('[API Key Service] Reading API keys from file:', dataFilePath);
   const fileContent = await fs.readFile(dataFilePath, 'utf8');
   return JSON.parse(fileContent);
 }
