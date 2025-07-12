@@ -14,16 +14,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  if (process.env.KEYSTONE_MODE === 'api') {
-      return (
-         <html lang="en" className="dark" style={{ colorScheme: "dark" }}>
-            <body>
-                {children}
-            </body>
-        </html>
-      )
-  }
-
+  // The conditional rendering based on KEYSTONE_MODE happens in next.config.ts redirects.
+  // This layout is for the admin UI. A separate layout is not needed for the API-only mode
+  // as no pages will be rendered.
   return (
     <html lang="en" className="dark" style={{ colorScheme: "dark" }}>
       <head>
