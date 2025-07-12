@@ -1,39 +1,27 @@
 
-import { promises as fs } from 'fs';
-import path from 'path';
+'use server';
+
+import { db } from './firestoreClient';
 import type { ApiKey } from '@/types';
-import { initialApiKeys } from '@/lib/initialData';
 
-// This path is now relative to the container's working directory
-const dataDirPath = path.join(process.cwd(), 'data');
-const dataFilePath = path.join(dataDirPath, 'apiKeys.json');
+const KEYS_COLLECTION = 'apiKeys';
 
-async function ensureDataFileExists() {
-  try {
-    // Check if the file exists. If not, this will throw an error.
-    await fs.access(dataFilePath);
-  } catch (error) {
-    // If the file doesn't exist, create the directory and the file with initial data.
-    console.log('[API Key Service] Data file not found. Creating a new one with initial data.');
-    await fs.mkdir(dataDirPath, { recursive: true });
-    await fs.writeFile(dataFilePath, JSON.stringify(initialApiKeys, null, 2), 'utf8');
-  }
+async function getKeysCollection() {
+  return db.collection(KEYS_COLLECTION);
 }
 
 export async function getApiKeys(): Promise<ApiKey[]> {
-  await ensureDataFileExists();
-  const fileContent = await fs.readFile(dataFilePath, 'utf8');
-  return JSON.parse(fileContent);
-}
-
-export async function saveApiKeys(keys: ApiKey[]): Promise<void> {
-  await ensureDataFileExists();
-  console.log(`[API Key Service] Saving ${keys.length} API keys to file:`, dataFilePath);
-  await fs.writeFile(dataFilePath, JSON.stringify(keys, null, 2), 'utf8');
+  const collection = await getKeysCollection();
+  const snapshot = await collection.orderBy('createdAt', 'desc').get();
+  if (snapshot.empty) {
+    console.log('[API Key Service] No API keys found in Firestore.');
+    return [];
+  }
+  return snapshot.docs.map(doc => doc.data() as ApiKey);
 }
 
 export async function addApiKey(keyData: { name: string; rateLimit: number }): Promise<ApiKey> {
-  const keys = await getApiKeys();
+  const collection = await getKeysCollection();
   const newKey: ApiKey = {
     id: `key_${Date.now()}`,
     name: keyData.name,
@@ -44,26 +32,40 @@ export async function addApiKey(keyData: { name: string; rateLimit: number }): P
     usage: 0,
     rateLimit: keyData.rateLimit,
   };
-  const updatedKeys = [newKey, ...keys];
-  await saveApiKeys(updatedKeys);
-  console.log(`[API Key Service] Added new key: "${newKey.name}"`);
+  
+  await collection.doc(newKey.id).set(newKey);
+  console.log(`[API Key Service] Added new key to Firestore: "${newKey.name}"`);
   return newKey;
 }
 
 export async function updateApiKey(updatedKey: ApiKey): Promise<void> {
-    const keys = await getApiKeys();
-    const keyIndex = keys.findIndex(k => k.id === updatedKey.id);
-    if (keyIndex === -1) {
-        throw new Error('API Key not found');
+    const collection = await getKeysCollection();
+    const keyRef = collection.doc(updatedKey.id);
+    
+    // Check if the document exists before updating
+    const doc = await keyRef.get();
+    if (!doc.exists) {
+        throw new Error('API Key not found in Firestore');
     }
-    keys[keyIndex] = updatedKey;
-    await saveApiKeys(keys);
-    console.log(`[API Key Service] Updated key: "${updatedKey.name}"`);
+
+    await keyRef.update(updatedKey);
+    console.log(`[API Key Service] Updated key in Firestore: "${updatedKey.name}"`);
 }
 
 export async function deleteApiKey(keyId: string): Promise<void> {
-    const keys = await getApiKeys();
-    const updatedKeys = keys.filter(k => k.id !== keyId);
-    await saveApiKeys(updatedKeys);
-    console.log(`[API Key Service] Deleted key with ID: "${keyId}"`);
+    const collection = await getKeysCollection();
+    await collection.doc(keyId).delete();
+    console.log(`[API Key Service] Deleted key from Firestore with ID: "${keyId}"`);
+}
+
+// The following functions now read-then-write, which is standard for this type of operation.
+export async function saveApiKeys(keys: ApiKey[]): Promise<void> {
+  const collection = await getKeysCollection();
+  const batch = db.batch();
+  keys.forEach(key => {
+    const docRef = collection.doc(key.id);
+    batch.set(docRef, key);
+  });
+  await batch.commit();
+  console.log(`[API Key Service] Saved ${keys.length} keys to Firestore.`);
 }
