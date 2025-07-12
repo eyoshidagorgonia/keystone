@@ -110,7 +110,7 @@ export function KeysClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
                 <TableRow key={key.id}>
                   <TableCell className="font-medium">{key.name}</TableCell>
                   <TableCell className="font-mono text-muted-foreground">
-                    {key.key.substring(0, 11)}...{key.key.substring(key.key.length - 4)}
+                    {key.key}
                   </TableCell>
                   <TableCell>
                     <Badge variant={key.status === "active" ? "secondary" : "destructive"} className="capitalize bg-primary/20 text-primary-foreground">
