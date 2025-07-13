@@ -6,7 +6,6 @@ import { recordConnection } from '@/lib/connectionLogService';
 
 
 const OLLAMA_TARGET_URL = process.env.OLLAMA_TARGET_URL || 'http://host.docker.internal:11434';
-const FORCED_MODEL = 'llama3.1:8b';
 
 async function handleProxyRequest(req: NextRequest, { params }: { params: { slug:string[] } }) {
   const path = params.slug.join('/');
@@ -49,11 +48,7 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
     
     const body = await req.json();
 
-    // Force the model to be llama3.1:8b
-    const originalModel = body.model;
-    body.model = FORCED_MODEL;
-    console.log(`[Proxy] Overriding model. Original: "${originalModel}", New: "${FORCED_MODEL}"`);
-    console.log(`[Proxy] Forwarding request to target: ${targetUrl.toString()}`);
+    console.log(`[Proxy] Forwarding request with model "${body.model}" to target: ${targetUrl.toString()}`);
 
     const response = await fetch(targetUrl, {
       method: req.method,

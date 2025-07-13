@@ -1,8 +1,6 @@
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { CodeBlock } from "@/components/code-block";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info } from "lucide-react";
 
 export default function DocumentationPage() {
   return (
@@ -65,13 +63,6 @@ export default function DocumentationPage() {
             <CodeBlock language="text">
                 {`http://localhost:9003/api/v1/proxy`}
             </CodeBlock>
-             <Alert>
-                <Info className="h-4 w-4" />
-                <AlertTitle>Model Override</AlertTitle>
-                <AlertDescription>
-                    Please note that the proxy is configured to override the `model` parameter. All requests will be processed using the <strong>llama3.1:8b</strong> model, regardless of the value you send.
-                </AlertDescription>
-            </Alert>
             <p>
               To interact with the Ollama API, append the standard Ollama path to the proxy endpoint. For example, to generate content, you would post to `/generate`.
             </p>
@@ -194,7 +185,7 @@ generateText();`}
             <h3 className="font-semibold pt-4">Generate Request Body</h3>
             <CodeBlock language="typescript">
 {`interface GenerateRequest {
-  model: string; // Note: This parameter is overridden by the proxy.
+  model: string;
   prompt: string;
   stream?: boolean;
   // ...other standard Ollama API parameters like 'options', 'system', etc.

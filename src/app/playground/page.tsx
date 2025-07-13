@@ -31,16 +31,13 @@ export default function PlaygroundPage() {
   const [apiKeys, setApiKeys] = React.useState<ApiKey[]>([]);
   const [selectedKey, setSelectedKey] = React.useState<string>('');
   const [prompt, setPrompt] = React.useState('Why is the sky blue?');
-  const [model, setModel] = React.useState('llama3');
+  const [model, setModel] = React.useState('llama3.1:8b');
   const [response, setResponse] = React.useState<string>('');
   const [error, setError] = React.useState<string>('');
   const [isLoading, setIsLoading] = React.useState(false);
 
   React.useEffect(() => {
     async function fetchKeys() {
-      // This is a bit of a workaround. We can't call the server action directly
-      // in a useEffect that runs on initial render. So we just read from the data file.
-      // In a real app, this might be an API call.
       try {
         const response = await fetch('/api/v1/keys');
         if (!response.ok) {
@@ -48,8 +45,9 @@ export default function PlaygroundPage() {
         }
         const keys = await response.json();
         setApiKeys(keys);
-        if (keys.length > 0) {
-          setSelectedKey(keys[0].key);
+        const activeKeys = keys.filter((k: ApiKey) => k.status === 'active');
+        if (activeKeys.length > 0) {
+          setSelectedKey(activeKeys[0].key);
         }
       } catch (e: any) {
         setError("Could not load API keys. " + e.message);
@@ -148,13 +146,17 @@ export default function PlaygroundPage() {
                  </div>
                  <div>
                     <Label htmlFor="model">Model</Label>
-                    <Textarea
-                        id="model"
-                        placeholder="e.g., llama3"
-                        value={model}
-                        onChange={(e) => setModel(e.target.value)}
-                        className="h-10"
-                    />
+                     <Select onValueChange={setModel} value={model}>
+                        <SelectTrigger id="model">
+                            <SelectValue placeholder="Select a model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="llama3.1:8b">llama3.1:8b</SelectItem>
+                            <SelectItem value="llama3">llama3</SelectItem>
+                            <SelectItem value="gemma:7b">gemma:7b</SelectItem>
+                            <SelectItem value="phi3">phi3</SelectItem>
+                        </SelectContent>
+                    </Select>
                  </div>
             </div>
             <div>
