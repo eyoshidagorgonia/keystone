@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -45,6 +46,14 @@ const chartConfig = {
     color: "hsl(var(--chart-1))",
   },
 } satisfies ChartConfig
+
+const ClientSideDate = ({ dateString }: { dateString: string }) => {
+    const [formattedDate, setFormattedDate] = React.useState('');
+    React.useEffect(() => {
+        setFormattedDate(new Date(dateString).toLocaleDateString());
+    }, [dateString]);
+    return <>{formattedDate}</>;
+};
 
 export function DashboardClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
   const [apiKeys, setApiKeys] = React.useState<ApiKey[]>(initialKeys);
@@ -273,7 +282,9 @@ export function DashboardClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
                         {key.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{new Date(key.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <ClientSideDate dateString={key.createdAt} />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

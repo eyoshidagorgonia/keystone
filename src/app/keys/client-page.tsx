@@ -39,6 +39,15 @@ import {
 import { deleteApiKey, revokeApiKey } from "./actions";
 import { cn } from "@/lib/utils";
 
+const ClientSideDate = ({ dateString }: { dateString: string | null }) => {
+    const [formattedDate, setFormattedDate] = React.useState('Never');
+    React.useEffect(() => {
+        if (dateString) {
+            setFormattedDate(new Date(dateString).toLocaleDateString());
+        }
+    }, [dateString]);
+    return <>{formattedDate}</>;
+};
 
 export function KeysClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
   const [apiKeys, setApiKeys] = React.useState<ApiKey[]>(initialKeys);
@@ -143,10 +152,10 @@ export function KeysClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {new Date(key.createdAt).toLocaleDateString()}
+                    <ClientSideDate dateString={key.createdAt} />
                   </TableCell>
                   <TableCell>
-                    {key.lastUsed ? new Date(key.lastUsed).toLocaleDateString() : "Never"}
+                    <ClientSideDate dateString={key.lastUsed} />
                   </TableCell>
                   <TableCell>{key.usage.toLocaleString()}</TableCell>
                   <TableCell className="text-right">
