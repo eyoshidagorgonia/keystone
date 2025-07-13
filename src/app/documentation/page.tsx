@@ -15,12 +15,12 @@ export default function DocumentationPage() {
         <CardHeader>
           <CardTitle className="font-headline">Getting Started</CardTitle>
           <CardDescription>
-            How to run the services using Docker.
+            How to run the services using Docker for local development.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p>
-            The simplest way to run the Admin UI and the API Proxy is by using Docker Compose. From the root of the project directory, run the following command:
+            The simplest way to run the Admin UI and the API Proxy locally is by using Docker Compose. From the root of the project directory, run the following command:
           </p>
           <CodeBlock language="bash">
             {`docker-compose up --build`}
@@ -46,7 +46,7 @@ export default function DocumentationPage() {
             {`Authorization: Bearer YOUR_API_KEY`}
           </CodeBlock>
            <p>
-            You can generate API keys from the "API Keys" tab in the dashboard, which is available at `http://localhost:9002`.
+            You can generate and manage API keys from the "API Keys" tab in the dashboard.
           </p>
         </CardContent>
       </Card>
@@ -59,16 +59,16 @@ export default function DocumentationPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-            <p>Your API proxy endpoint is:</p>
+            <p>Your production API proxy endpoint is:</p>
             <CodeBlock language="text">
-                {`http://localhost:9003/api/v1/proxy`}
+                {`https://modelapi.nexix.ai/api/v1/proxy`}
             </CodeBlock>
             <p>
               To interact with the Ollama API, append the standard Ollama path to the proxy endpoint. For example, to generate content, you would post to `/generate`.
             </p>
             <h3 className="font-semibold pt-4">Example: cURL Request</h3>
             <CodeBlock language="bash">
-{`curl http://localhost:9003/api/v1/proxy/generate \\
+{`curl https://modelapi.nexix.ai/api/v1/proxy/generate \\
   -X POST \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -85,7 +85,7 @@ export default function DocumentationPage() {
 import json
 
 api_key = "YOUR_API_KEY"
-proxy_url = "http://localhost:9003/api/v1/proxy/generate"
+proxy_url = "https://modelapi.nexix.ai/api/v1/proxy/generate"
 
 headers = {
     "Content-Type": "application/json",
@@ -112,7 +112,7 @@ else:
 {`const axios = require('axios');
 
 const apiKey = 'YOUR_API_KEY';
-const proxyUrl = 'http://localhost:9003/api/v1/proxy/generate';
+const proxyUrl = 'https://modelapi.nexix.ai/api/v1/proxy/generate';
 
 const headers = {
     'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ axios.post(proxyUrl, data, { headers })
             <CodeBlock language="typescript">
 {`async function generateText() {
   const apiKey = 'YOUR_API_KEY';
-  const proxyUrl = 'http://localhost:9003/api/v1/proxy/generate';
+  const proxyUrl = 'https://modelapi.nexix.ai/api/v1/proxy/generate';
 
   const headers = {
     'Content-Type': 'application/json',
@@ -178,7 +178,7 @@ generateText();`}
         <CardHeader>
           <CardTitle className="font-headline">Schemas</CardTitle>
           <CardDescription>
-            Type definitions for API requests and responses.
+            Common type definitions for API requests and responses.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -188,7 +188,7 @@ generateText();`}
   model: string;
   prompt: string;
   stream?: boolean;
-  // ...other standard Ollama API parameters like 'options', 'system', etc.
+  // ...other standard Ollama API parameters like 'options', 'system', 'template', etc.
 }`}
             </CodeBlock>
 
