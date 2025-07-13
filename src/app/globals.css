@@ -32,40 +32,40 @@
   }
  
   .dark {
-    --background: 80 15% 10%; /* Very dark olive */
-    --foreground: 45 30% 96%; /* Soft cream/off-white */
-    --card: 80 15% 12%;
-    --card-foreground: 45 30% 96%;
-    --popover: 80 15% 8%;
-    --popover-foreground: 45 30% 96%;
-    --primary: 80 58% 35%; /* Olive Drab green for primary actions */
-    --primary-foreground: 45 30% 98%;
-    --secondary: 80 15% 18%;
-    --secondary-foreground: 45 30% 96%;
-    --muted: 80 15% 18%;
-    --muted-foreground: 45 15% 75%;
-    --accent: 80 45% 45%; /* A richer olive/moss green for accents */
-    --accent-foreground: 45 30% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --background: 0 0% 7.1%; /* Graphite Black #121212 */
+    --foreground: 180 100% 50%; /* Neon Cyan #00FFFF for high-contrast text */
+    --card: 0 0% 11.8%; /* Charcoal Grey #1E1E1E */
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 11.8%; /* Charcoal Grey #1E1E1E */
+    --popover-foreground: 0 0% 95%;
+    --primary: 268 53% 43%; /* Electric Indigo #6C38A6 */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 15%; /* Darker charcoal for secondary elements */
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 11.8%; /* Charcoal Grey #1E1E1E */
+    --muted-foreground: 225 18% 47%; /* Slate Blue for muted text */
+    --accent: 76 89% 64%; /* Cyber Lime #C7F464 */
+    --accent-foreground: 0 0% 7.1%; /* Graphite Black for text on accent */
+    --destructive: 339 100% 50%; /* Infrared Red #FF0055 */
     --destructive-foreground: 0 0% 98%;
-    --border: 80 15% 16%;
-    --input: 80 15% 16%;
-    --ring: 80 50% 50%;
-    --chart-1: 80 60% 50%;
-    --chart-2: 85 40% 45%;
-    --chart-3: 80 50% 60%;
-    --chart-4: 85 60% 70%;
-    --chart-5: 80 40% 65%;
+    --border: 225 18% 39%; /* Slate Blue #495579 */
+    --input: 225 18% 39%; /* Slate Blue #495579 */
+    --ring: 76 89% 64%; /* Cyber Lime #C7F464 */
+    --chart-1: 268 53% 43%; /* Electric Indigo */
+    --chart-2: 180 100% 50%; /* Neon Cyan */
+    --chart-3: 76 89% 64%; /* Cyber Lime */
+    --chart-4: 164 100% 43%; /* Minty Teal */
+    --chart-5: 339 100% 50%; /* Infrared Red */
 
     /* Sidebar Variables */
-    --sidebar-background: 80 15% 8%;
-    --sidebar-foreground: 45 30% 96%;
-    --sidebar-primary: 80 58% 35%;
-    --sidebar-primary-foreground: 45 30% 98%;
-    --sidebar-accent: 80 30% 30%;
-    --sidebar-accent-foreground: 45 30% 98%;
-    --sidebar-border: 80 15% 14%;
-    --sidebar-ring: 80 50% 50%;
+    --sidebar-background: 0 0% 7.1%; /* Graphite Black */
+    --sidebar-foreground: 0 0% 85%;
+    --sidebar-primary: 268 53% 43%; /* Electric Indigo */
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 15%; /* Darker charcoal for sidebar hover */
+    --sidebar-accent-foreground: 76 89% 64%; /* Cyber Lime on hover */
+    --sidebar-border: 225 18% 25%; /* Slightly lighter Slate Blue */
+    --sidebar-ring: 76 89% 64%; /* Cyber Lime */
   }
 }
  
