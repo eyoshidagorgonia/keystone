@@ -20,7 +20,7 @@ const toolSchema = z.object({
 
 const messageSchema = z.object({
   role: z.enum(['system', 'user', 'assistant']),
-  content: z.string(),
+  content: z.string().nullable(),
 });
 
 const completionsRequestSchema = z.object({
@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
     // 1. Authenticate the request
     const authorization = req.headers.get('Authorization');
     if (!authorization || !authorization.startsWith('Bearer ')) {
+      console.error('[Completions] Unauthorized: Missing or invalid Authorization header.');
       return NextResponse.json({ error: 'Unauthorized: Missing or invalid API key' }, { status: 401 });
     }
     
@@ -76,9 +77,10 @@ export async function POST(req: NextRequest) {
     const keyDetails = apiKeys.find(k => k.key === apiKey && k.status === 'active');
 
     if (!keyDetails) {
+      console.error(`[Completions] Unauthorized: Invalid or revoked API key: ...${apiKey.slice(-4)}`);
       return NextResponse.json({ error: 'Unauthorized: Invalid or revoked API key' }, { status: 401 });
     }
-     console.log(`[Completions] API key validated for: "${keyDetails.name}"`);
+    console.log(`[Completions] API key validated for: "${keyDetails.name}"`);
 
     // Asynchronously record connection & usage
     recordConnection({ 
@@ -88,15 +90,16 @@ export async function POST(req: NextRequest) {
         ip: req.ip,
         userAgent: req.headers.get('user-agent') ?? undefined,
         geo: req.geo ? { city: req.geo.city, country: req.geo.country } : undefined
-    }).catch(err => console.error(`[Completions] Failed to record connection:`, err));
+    }).catch(err => console.error(`[Completions] Failed to record connection for key ${keyDetails.id}:`, err));
     
-    recordUsage(keyDetails.id).catch(err => console.error(`[Completions] Failed to record usage:`, err));
+    recordUsage(keyDetails.id).catch(err => console.error(`[Completions] Failed to record usage for key ${keyDetails.id}:`, err));
     
     // 2. Validate and parse the request body
     const body = await req.json();
     const validationResult = completionsRequestSchema.safeParse(body);
 
     if (!validationResult.success) {
+      console.error('[Completions] Invalid request body:', validationResult.error.errors);
       return NextResponse.json({ error: 'Invalid request body', details: validationResult.error.errors }, { status: 400 });
     }
     
@@ -107,7 +110,7 @@ export async function POST(req: NextRequest) {
     const systemMessage = messages.find(m => m.role === 'system');
     
     let finalSystemPrompt = toolPromptSection;
-    if(systemMessage) {
+    if(systemMessage && systemMessage.content) {
         finalSystemPrompt = `${systemMessage.content}\n\n${toolPromptSection}`;
     }
 
@@ -122,7 +125,7 @@ export async function POST(req: NextRequest) {
       format: "json", // Force JSON output to reliably detect tool calls
     };
 
-    console.log(`[Completions] Forwarding request to Ollama with model "${model}"`);
+    console.log(`[Completions] Forwarding request to Ollama with model "${model}" for key "${keyDetails.name}"`);
 
     // 4. Call Ollama
     const targetUrl = new URL(`${OLLAMA_TARGET_URL}/api/generate`);
@@ -134,8 +137,8 @@ export async function POST(req: NextRequest) {
 
     if (!ollamaResponse.ok) {
         const errorText = await ollamaResponse.text();
-        console.error(`[Completions] Ollama returned an error: ${errorText}`);
-        return new NextResponse(errorText, { status: ollamaResponse.status, headers: { 'Content-Type': 'text/plain' } });
+        console.error(`[Completions] Ollama returned an error: ${ollamaResponse.status} ${errorText}`);
+        return new NextResponse(errorText, { status: ollamaResponse.status, headers: { 'Content-Type': 'application/json' }, statusText: "Error from Ollama" });
     }
 
     const ollamaResult = await ollamaResponse.json();
@@ -145,7 +148,7 @@ export async function POST(req: NextRequest) {
     try {
         const responseJson = JSON.parse(responseText);
         if (responseJson.tool_call) {
-            console.log('[Completions] Detected tool call in response.');
+            console.log(`[Completions] Detected tool call in response for key "${keyDetails.name}".`);
             return NextResponse.json({
                 choices: [{
                     index: 0,
@@ -169,7 +172,7 @@ export async function POST(req: NextRequest) {
         // Not a JSON response or doesn't contain a tool_call, treat as standard text.
     }
     
-    console.log('[Completions] Detected standard text response.');
+    console.log(`[Completions] Detected standard text response for key "${keyDetails.name}".`);
     return NextResponse.json({
         choices: [{
             index: 0,
@@ -182,10 +185,11 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error(`[Completions] Internal Server Error:`, error.message);
     if (error instanceof SyntaxError) {
+        console.error(`[Completions] Invalid JSON in request body:`, error.message);
         return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
     }
+    console.error(`[Completions] Internal Server Error:`, error);
     return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
   }
 }

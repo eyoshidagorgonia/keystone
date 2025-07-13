@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getApiKeys, updateApiKey } from '@/lib/apiKeyService';
+import { getApiKeys } from '@/lib/apiKeyService';
 import { recordUsage } from '@/lib/metricsService';
 import { recordConnection } from '@/lib/connectionLogService';
 
@@ -9,7 +9,7 @@ const OLLAMA_TARGET_URL = process.env.OLLAMA_TARGET_URL || 'http://host.docker.i
 
 async function handleProxyRequest(req: NextRequest, { params }: { params: { slug:string[] } }) {
   const path = params.slug.join('/');
-  console.log(`[Proxy] Received ${req.method} request for /${path}`);
+  console.log(`[Proxy] Received ${req.method} request for /api/${path}`);
 
   try {
     const authorization = req.headers.get('Authorization');
@@ -19,8 +19,7 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
     }
     
     const apiKey = authorization.split(' ')[1];
-    console.log(`[Proxy] Attempting to validate API key: ...${apiKey.slice(-4)}`);
-
+    
     const apiKeys = await getApiKeys();
     const keyDetails = apiKeys.find(k => k.key === apiKey && k.status === 'active');
 
@@ -48,7 +47,7 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
     
     const body = await req.json();
 
-    console.log(`[Proxy] Forwarding request with model "${body.model}" to target: ${targetUrl.toString()}`);
+    console.log(`[Proxy] Forwarding request with model "${body.model}" to target: ${targetUrl.toString()} for key "${keyDetails.name}"`);
 
     const response = await fetch(targetUrl, {
       method: req.method,
@@ -58,13 +57,13 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
       body: JSON.stringify(body),
     });
 
-    console.log(`[Proxy] Received response with status ${response.status} from target.`);
+    console.log(`[Proxy] Received response with status ${response.status} from target for key "${keyDetails.name}".`);
     
     // Check if the response was successful. If not, forward the error response as text.
     if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[Proxy] Target returned an error: ${errorText}`);
-        return new NextResponse(errorText, { status: response.status, headers: { 'Content-Type': 'text/plain' } });
+        console.error(`[Proxy] Target returned an error for key "${keyDetails.name}": ${response.status} ${errorText}`);
+        return new NextResponse(errorText, { status: response.status, headers: { 'Content-Type': 'application/json' }, statusText: "Error from Ollama" });
     }
     
     // Asynchronously record usage without blocking the response
@@ -72,20 +71,16 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
         console.error(`[Proxy] Failed to record usage for key ${keyDetails.id}:`, err);
     });
 
-    // To ensure the recording happens even if the client disconnects, 
-    // but without delaying the response to the user, we don't await the promise here.
-    // In a serverless environment, you might need a more robust solution like a queue.
-
     const data = await response.json();
     
     return NextResponse.json(data, { status: response.status });
 
   } catch (error: any) {
-    // This will catch errors from our proxy logic, like failing to parse the incoming request body
-    console.error(`[Proxy] Internal Server Error:`, error.message);
     if (error instanceof SyntaxError) {
-        return NextResponse.json({ error: 'Invalid JSON in request body', details: error.message }, { status: 400 });
+        console.error(`[Proxy] Invalid JSON in request body:`, error.message);
+        return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
     }
+    console.error(`[Proxy] Internal Server Error:`, error);
     return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
   }
 }
