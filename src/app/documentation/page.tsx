@@ -1,6 +1,8 @@
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { CodeBlock } from "@/components/code-block";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 export default function DocumentationPage() {
   return (
@@ -53,9 +55,9 @@ export default function DocumentationPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline">Making Requests</CardTitle>
+          <CardTitle className="font-headline">Standard Proxy Endpoint</CardTitle>
           <CardDescription>
-            The proxy forwards requests to the Ollama API. Use the standard Ollama API routes.
+            For simple, direct requests to the Ollama `/api/generate` endpoint.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -78,136 +80,110 @@ export default function DocumentationPage() {
     "stream": false
   }'`}
             </CodeBlock>
-
-            <h3 className="font-semibold pt-4">Example: Python Request</h3>
-            <CodeBlock language="python">
-{`import requests
-import json
-
-api_key = "YOUR_API_KEY"
-proxy_url = "https://modelapi.nexix.ai/api/v1/proxy/generate"
-
-headers = {
-    "Content-Type": "application/json",
-    "Authorization": f"Bearer {api_key}"
-}
-
-data = {
-    "model": "llama3",
-    "prompt": "Why is the sky blue?",
-    "stream": False
-}
-
-response = requests.post(proxy_url, headers=headers, data=json.dumps(data))
-
-if response.status_code == 200:
-    print(response.json())
-else:
-    print(f"Error: {response.status_code}")
-    print(response.text)`}
-            </CodeBlock>
-
-            <h3 className="font-semibold pt-4">Example: Node.js (axios) Request</h3>
-            <CodeBlock language="javascript">
-{`const axios = require('axios');
-
-const apiKey = 'YOUR_API_KEY';
-const proxyUrl = 'https://modelapi.nexix.ai/api/v1/proxy/generate';
-
-const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': \`Bearer \${apiKey}\`
-};
-
-const data = {
-    model: 'llama3',
-    prompt: 'Why is the sky blue?',
-    stream: false
-};
-
-axios.post(proxyUrl, data, { headers })
-    .then(response => {
-        console.log(response.data);
-    })
-    .catch(error => {
-        console.error('Error:', error.response ? error.response.data : error.message);
-    });`}
-            </CodeBlock>
-
-            <h3 className="font-semibold pt-4">Example: TypeScript (fetch) Request</h3>
-            <CodeBlock language="typescript">
-{`async function generateText() {
-  const apiKey = 'YOUR_API_KEY';
-  const proxyUrl = 'https://modelapi.nexix.ai/api/v1/proxy/generate';
-
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': \`Bearer \${apiKey}\`,
-  };
-
-  const body = {
-    model: 'llama3',
-    prompt: 'Why is the sky blue?',
-    stream: false,
-  };
-
-  try {
-    const response = await fetch(proxyUrl, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      throw new Error(\`HTTP error! status: \${response.status}\`);
-    }
-
-    const data = await response.json();
-    console.log(data);
-  } catch (error) {
-    console.error('Error fetching data:', error);
-  }
-}
-
-generateText();`}
-            </CodeBlock>
         </CardContent>
       </Card>
 
-       <Card>
+      <Card>
         <CardHeader>
-          <CardTitle className="font-headline">Schemas</CardTitle>
+          <CardTitle className="font-headline">OpenAI-Compatible Endpoint (with Tool Calling)</CardTitle>
           <CardDescription>
-            Common type definitions for API requests and responses.
+            For advanced requests using the OpenAI Chat Completions format, including tool calls.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-            <h3 className="font-semibold pt-4">Generate Request Body</h3>
-            <CodeBlock language="typescript">
-{`interface GenerateRequest {
-  model: string;
-  prompt: string;
-  stream?: boolean;
-  // ...other standard Ollama API parameters like 'options', 'system', 'template', etc.
+            <p>Your OpenAI-compatible endpoint is:</p>
+            <CodeBlock language="text">
+                {`https://modelapi.nexix.ai/api/v1/chat/completions`}
+            </CodeBlock>
+            <p>
+              This endpoint accepts a request body that mirrors the OpenAI Chat Completions API. It can be used as a drop-in replacement for services that integrate with OpenAI.
+            </p>
+            <h3 className="font-semibold pt-4">Example: cURL Request with Tool Calling</h3>
+            <CodeBlock language="bash">
+{`curl https://modelapi.nexix.ai/api/v1/chat/completions \\
+  -X POST \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -d '{
+    "model": "llama3",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a helpful assistant."
+      },
+      {
+        "role": "user",
+        "content": "What is the weather like in Boston?"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_current_weather",
+          "description": "Get the current weather in a given location",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "location": {
+                "type": "string",
+                "description": "The city and state, e.g. San Francisco, CA"
+              },
+              "unit": {
+                "type": "string",
+                "enum": ["celsius", "fahrenheit"]
+              }
+            },
+            "required": ["location"]
+          }
+        }
+      }
+    ]
+  }'`}
+            </CodeBlock>
+
+             <h3 className="font-semibold pt-4">Expected Tool Call Response</h3>
+            <CodeBlock language="json">
+{`{
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_...",
+            "type": "function",
+            "function": {
+              "name": "get_current_weather",
+              "arguments": "{\\"location\\":\\"Boston, MA\\"}"
+            }
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ]
 }`}
             </CodeBlock>
 
-            <h3 className="font-semibold pt-4">Generate Response Body</h3>
-            <CodeBlock language="typescript">
-{`interface GenerateResponse {
-  model: string;
-  created_at: string;
-  response: string;
-  done: boolean;
-  context?: number[];
-  total_duration?: number;
-  load_duration?: number;
-  prompt_eval_count?: number;
-  prompt_eval_duration?: number;
-  eval_count?: number;
-  eval_duration?: number;
+            <h3 className="font-semibold pt-4">Expected Standard Text Response</h3>
+             <CodeBlock language="json">
+{`{
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The sky is blue due to a phenomenon called Rayleigh scattering."
+      },
+      "finish_reason": "stop"
+    }
+  ]
 }`}
             </CodeBlock>
+
         </CardContent>
       </Card>
     </div>
