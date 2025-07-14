@@ -5,14 +5,10 @@ import * as React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { CodeBlock } from "@/components/code-block";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
-import { Info, Cpu, Bot, ImageIcon, Copy } from "lucide-react";
+import { Cpu, Bot, ImageIcon } from "lucide-react";
 import type { ServiceConfig } from "@/types";
 
 export function DocumentationClientPage({ services }: { services: ServiceConfig[] }) {
-  const pageRef = React.useRef<HTMLDivElement>(null);
-  
   const ollamaService = services.find(s => s.type === 'ollama');
   const sdService = services.find(s => s.type === 'stable-diffusion-a1111');
 
@@ -21,43 +17,8 @@ export function DocumentationClientPage({ services }: { services: ServiceConfig[
     return modelsString.split(',').map(m => m.trim()).filter(Boolean);
   };
 
-  const handleCopy = () => {
-    if (pageRef.current) {
-      const textToCopy = extractText(pageRef.current);
-      navigator.clipboard.writeText(textToCopy);
-      toast({ title: "Copied!", description: "Documentation content copied to clipboard." });
-    }
-  };
-
-  const extractText = (node: HTMLElement): string => {
-    let text = "";
-    const walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, null);
-
-    while(walker.nextNode()) {
-      const currentNode = walker.currentNode;
-      if (currentNode.nodeType === Node.TEXT_NODE) {
-        if (currentNode.parentElement?.tagName !== 'CODE') {
-           text += currentNode.textContent;
-        }
-      } else if (currentNode.nodeType === Node.ELEMENT_NODE) {
-        const element = currentNode as HTMLElement;
-        if (['H1', 'H2', 'H3'].includes(element.tagName)) {
-           text += `\n\n## ${element.textContent}\n`;
-        } else if (element.tagName === 'P') {
-           text += `\n${element.textContent}\n`;
-        } else if (element.tagName === 'CODE' && element.parentElement?.tagName === 'PRE') {
-            text += `\n\`\`\`\n${element.textContent}\n\`\`\`\n`;
-        } else if (element.classList.contains('flex-wrap')) {
-            const badges = Array.from(element.querySelectorAll('div[class*="badge"]'));
-            text += '\n' + badges.map(b => b.textContent).join(', ') + '\n';
-        }
-      }
-    }
-    return text.replace(/(\n\s*){3,}/g, '\n\n').trim();
-  };
-
   return (
-    <div className="flex flex-col gap-8" ref={pageRef}>
+    <div className="flex flex-col gap-8">
       <header className="flex justify-between items-start">
         <div>
             <h1 className="text-3xl font-bold font-headline tracking-tight">Documentation</h1>
@@ -65,10 +26,6 @@ export function DocumentationClientPage({ services }: { services: ServiceConfig[
             How to integrate with the KeyStone API Proxy.
             </p>
         </div>
-        <Button onClick={handleCopy} variant="outline">
-            <Copy className="mr-2 h-4 w-4" />
-            Copy Page Content
-        </Button>
       </header>
 
        <Card>
