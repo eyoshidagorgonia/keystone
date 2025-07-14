@@ -111,7 +111,7 @@ export function ServicesClientPage({ initialServices }: { initialServices: Servi
                     </div>
                      <div>
                         <h3 className="font-semibold text-muted-foreground">Authentication</h3>
-                        <p>API Key</p>
+                        <p>API Key (via Proxy)</p>
                     </div>
                 </div>
               </CardContent>

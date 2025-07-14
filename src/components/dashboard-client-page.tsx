@@ -8,6 +8,7 @@ import {
   Server,
   AlertTriangle,
   Clock,
+  ImageIcon,
 } from "lucide-react"
 import { formatDistanceToNow } from 'date-fns';
 import type { ChartConfig } from "@/components/ui/chart"
@@ -35,8 +36,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { getUsageMetrics, fetchRecentConnections } from "@/app/keys/actions";
-import { ApiKey, UsageStat, ConnectionLog } from "@/types"
+import { ApiKey, UsageStat, ConnectionLog, ServiceConfig } from "@/types"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
@@ -59,46 +59,41 @@ export function DashboardClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
   const [apiKeys, setApiKeys] = React.useState<ApiKey[]>(initialKeys);
   const [usageStats, setUsageStats] = React.useState<UsageStat[]>([]);
   const [recentConnections, setRecentConnections] = React.useState<ConnectionLog[]>([]);
+  const [services, setServices] = React.useState<ServiceConfig[]>([]);
 
   const fetchDashboardData = React.useCallback(async () => {
     try {
-      const [keysResponse, metricsResponse, connectionsResponse] = await Promise.all([
+      const [keysResponse, metricsResponse, connectionsResponse, servicesResponse] = await Promise.all([
         fetch('/api/v1/keys'),
-        getUsageMetrics(),
-        fetchRecentConnections(),
+        fetch('/api/v1/metrics'),
+        fetch('/api/v1/connections'),
+        fetch('/api/v1/services')
       ]);
       
-      if (keysResponse.ok) {
-        const keys = await keysResponse.json();
-        setApiKeys(keys);
-      } else {
-        console.error('Failed to fetch API keys');
+      if (keysResponse.ok) setApiKeys(await keysResponse.json());
+      if (servicesResponse.ok) setServices(await servicesResponse.json());
+      if (connectionsResponse.ok) setRecentConnections(await connectionsResponse.json());
+
+      if (metricsResponse.ok) {
+        const metrics = await metricsResponse.json();
+        const today = new Date();
+        const last7Days = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            return d.toISOString().split('T')[0];
+        }).reverse();
+
+        const processedMetrics = last7Days.map(date => {
+            const found = metrics.find((m: UsageStat) => m.date === date);
+            return { date, requests: found ? found.requests : 0 };
+        });
+        setUsageStats(processedMetrics);
       }
-
-      setRecentConnections(connectionsResponse);
-
-      const today = new Date();
-      const last7Days = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
-        return d.toISOString().split('T')[0];
-      }).reverse();
-
-      const processedMetrics = last7Days.map(date => {
-        const found = metricsResponse.find(m => m.date === date);
-        return {
-          date: date,
-          requests: found ? found.requests : 0,
-        };
-      });
-
-      setUsageStats(processedMetrics);
 
     } catch (e: any) {
       console.error("Could not load dashboard data. " + e.message);
     }
   }, []);
-
 
   React.useEffect(() => {
     fetchDashboardData();
@@ -111,6 +106,8 @@ export function DashboardClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
   const recentKeys = [...apiKeys].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
   const totalRequests = usageStats.reduce((acc, stat) => acc + stat.requests, 0);
   const activeKeysCount = apiKeys.filter(key => key.status === 'active').length;
+  const activeServicesCount = services.filter(s => s.status === 'active').length;
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -143,8 +140,8 @@ export function DashboardClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
             <Server className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1</div>
-            <p className="text-xs text-muted-foreground">Ollama Proxy</p>
+            <div className="text-2xl font-bold">{activeServicesCount}</div>
+            <p className="text-xs text-muted-foreground">of {services.length} configured</p>
           </CardContent>
         </Card>
         <Card>

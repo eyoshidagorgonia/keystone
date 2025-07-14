@@ -21,7 +21,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CodeBlock } from '@/components/code-block';
-import { getApiKeys } from '@/app/keys/actions';
 import type { ApiKey } from '@/types';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
