@@ -1,4 +1,3 @@
-
 "use client"
 
 import {
@@ -48,6 +47,7 @@ const formSchema = z.object({
   targetUrl: z.string().url("Please enter a valid URL (e.g., http://localhost:11434)."),
   apiKey: z.string().optional(),
   status: z.enum(['active', 'inactive']),
+  supportedModels: z.string().optional(),
 })
 
 export function EditServiceDialog({ open, onOpenChange, onServiceUpdated, service }: EditServiceDialogProps) {
@@ -58,6 +58,7 @@ export function EditServiceDialog({ open, onOpenChange, onServiceUpdated, servic
       targetUrl: service.targetUrl,
       apiKey: service.apiKey || "",
       status: service.status,
+      supportedModels: service.supportedModels || "",
     },
   })
   
@@ -67,6 +68,7 @@ export function EditServiceDialog({ open, onOpenChange, onServiceUpdated, servic
         targetUrl: service.targetUrl,
         apiKey: service.apiKey || "",
         status: service.status,
+        supportedModels: service.supportedModels || "",
     });
   }, [service, form]);
 
@@ -126,6 +128,22 @@ export function EditServiceDialog({ open, onOpenChange, onServiceUpdated, servic
                         <FormControl>
                             <Input placeholder="http://host.docker.internal:11434" {...field} />
                         </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="supportedModels"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Supported Models</FormLabel>
+                        <FormControl>
+                            <Input placeholder="llama3, gemma:7b, etc." {...field} />
+                        </FormControl>
+                         <FormDescription>
+                            A comma-separated list of models for this service.
+                        </FormDescription>
                         <FormMessage />
                         </FormItem>
                     )}

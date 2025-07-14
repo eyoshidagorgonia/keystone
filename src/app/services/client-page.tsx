@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -11,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bot, Image as ImageIcon, Plus, Server, Pencil } from "lucide-react";
+import { Bot, Image as ImageIcon, Plus, Server, Pencil, Cpu } from "lucide-react";
 import type { ServiceConfig } from "@/types";
 import { AddServiceDialog } from "@/components/add-service-dialog";
 import { EditServiceDialog } from "@/components/edit-service-dialog";
@@ -53,6 +52,11 @@ export function ServicesClientPage({ initialServices }: { initialServices: Servi
     setIsEditDialogOpen(true);
   }
 
+  const parseModels = (modelsString?: string): string[] => {
+    if (!modelsString) return [];
+    return modelsString.split(',').map(m => m.trim()).filter(Boolean);
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <header className="flex justify-between items-start">
@@ -71,6 +75,7 @@ export function ServicesClientPage({ initialServices }: { initialServices: Servi
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {services.map((service) => {
           const ServiceIcon = serviceIcons[service.type] || Server;
+          const supportedModels = parseModels(service.supportedModels);
           return (
             <Card key={service.id}>
               <CardHeader>
@@ -99,7 +104,7 @@ export function ServicesClientPage({ initialServices }: { initialServices: Servi
                         </div>
                         <div>
                             <h3 className="font-semibold text-muted-foreground">Gateway Auth</h3>
-                            <p>API Key</p>
+                            <p>API Key (via Proxy)</p>
                         </div>
                     </div>
                     <div>
@@ -121,6 +126,16 @@ export function ServicesClientPage({ initialServices }: { initialServices: Servi
                             {service.apiKey ? 'Set' : 'Not Set'}
                         </p>
                     </div>
+                     {supportedModels.length > 0 && (
+                        <div>
+                            <h3 className="font-semibold text-muted-foreground flex items-center gap-2 mb-2"><Cpu className="h-4 w-4" /> Supported Models</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {supportedModels.map(model => (
+                                    <Badge key={model} variant="outline" className="font-mono text-xs">{model}</Badge>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
               </CardContent>
             </Card>

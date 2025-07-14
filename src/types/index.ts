@@ -36,4 +36,5 @@ export interface ServiceConfig {
   status: 'active' | 'inactive';
   createdAt: string;
   apiKey?: string; // Optional API key for the target service itself
+  supportedModels?: string; // Comma-separated list of models
 }
