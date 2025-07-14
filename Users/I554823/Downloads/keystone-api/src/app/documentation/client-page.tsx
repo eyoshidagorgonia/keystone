@@ -36,7 +36,6 @@ export function DocumentationClientPage({ services }: { services: ServiceConfig[
     while(walker.nextNode()) {
       const currentNode = walker.currentNode;
       if (currentNode.nodeType === Node.TEXT_NODE) {
-        // Simple text nodes, like in <p> or <hX>
         if (currentNode.parentElement?.tagName !== 'CODE') {
            text += currentNode.textContent;
         }
@@ -48,7 +47,7 @@ export function DocumentationClientPage({ services }: { services: ServiceConfig[
            text += `\n${element.textContent}\n`;
         } else if (element.tagName === 'CODE' && element.parentElement?.tagName === 'PRE') {
             text += `\n\`\`\`\n${element.textContent}\n\`\`\`\n`;
-        } else if (element.classList.contains('flex-wrap')) { // For model badges
+        } else if (element.classList.contains('flex-wrap')) {
             const badges = Array.from(element.querySelectorAll('div[class*="badge"]'));
             text += '\n' + badges.map(b => b.textContent).join(', ') + '\n';
         }
@@ -123,7 +122,7 @@ Client Application`}
         </CardHeader>
         <CardContent className="space-y-4">
           <p>
-            You must include your API key in the `Authorization` header of your request, using the `Bearer` scheme.
+            You must include your API key in the 'Authorization' header of your request, using the 'Bearer' scheme.
           </p>
           <CodeBlock language="bash">
             {`Authorization: Bearer YOUR_GATEWAY_API_KEY`}
@@ -148,7 +147,7 @@ Client Application`}
                     <div>
                         <h3 className="font-semibold">{ollamaService.name}</h3>
                         <p className="text-sm text-muted-foreground mb-3">
-                            Provides proxy access to any Ollama-compatible API. Models are specified via the `model` parameter in the JSON request body. This supports both the standard `/api/generate` endpoint and the OpenAI-compatible `/v1/chat/completions` endpoint.
+                            Provides proxy access to any Ollama-compatible API. Models are specified via the 'model' parameter in the JSON request body. This supports both the standard '/api/generate' endpoint and the OpenAI-compatible '/v1/chat/completions' endpoint.
                         </p>
                         <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-2"><Cpu className="h-4 w-4" /> Configured Models</h4>
                         <div className="flex flex-wrap gap-2">
@@ -164,7 +163,7 @@ Client Application`}
                 </div>
             ) : ( <p className="text-sm text-muted-foreground">Ollama service not configured.</p> )}
             
-            <div className="border-b"></div>
+            <div className="border-b my-4"></div>
 
             {sdService ? (
                 <div className="flex items-start gap-4">
@@ -172,7 +171,7 @@ Client Application`}
                     <div>
                         <h3 className="font-semibold">{sdService.name}</h3>
                         <p className="text-sm text-muted-foreground mb-3">
-                            Provides proxy access to the AUTOMATIC1111 Stable Diffusion Web UI API. This specifically targets the `/sdapi/v1/txt2img` endpoint. You can dynamically switch models by passing the model checkpoint name in the `override_settings.sd_model_checkpoint` parameter.
+                            Provides proxy access to the AUTOMATIC1111 Stable Diffusion Web UI API. This specifically targets the '/sdapi/v1/txt2img' endpoint. You can dynamically switch models by passing the model checkpoint name in the 'override_settings.sd_model_checkpoint' parameter.
                         </p>
                         <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-2"><Cpu className="h-4 w-4" /> Configured Models</h4>
                          <div className="flex flex-wrap gap-2">
@@ -194,12 +193,12 @@ Client Application`}
         <CardHeader>
           <CardTitle className="font-headline">Ollama: Standard Proxy Endpoint</CardTitle>
           <CardDescription>
-            For simple, direct requests to the Ollama `/api/generate` endpoint.
+            For simple, direct requests to the Ollama '/api/generate' endpoint.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-            <p>This endpoint forwards requests to the `/api/[...slug]` path of your active Ollama service.</p>
-            <h3 className="font-semibold pt-4">Example: cURL to `/api/v1/proxy/generate`</h3>
+            <p>This endpoint forwards requests to the '/api/[...slug]' path of your active Ollama service.</p>
+            <h3 className="font-semibold pt-4">Example: cURL to '/api/v1/proxy/generate'</h3>
             <CodeBlock language="bash">
 {`curl http://localhost:9003/api/v1/proxy/generate \\
   -X POST \\
@@ -279,7 +278,7 @@ Client Application`}
                 {`http://localhost:9003/api/v1/sd/txt2img`}
             </CodeBlock>
             <p>
-              This endpoint proxies requests to the `/sdapi/v1/txt2img` endpoint of your Stable Diffusion service. You can switch the model on-the-fly by providing the `sd_model_checkpoint` in an `override_settings` object.
+              This endpoint proxies requests to the '/sdapi/v1/txt2img' endpoint of your Stable Diffusion service. You can switch the model on-the-fly by providing the 'sd_model_checkpoint' in an 'override_settings' object.
             </p>
             <h3 className="font-semibold pt-4">Example: cURL Request with Model Override</h3>
             <CodeBlock language="bash">
@@ -313,7 +312,7 @@ Client Application`}
             {`docker-compose up --build`}
           </CodeBlock>
            <p>
-            This will start the Admin UI on port `9002` and the API Proxy service on port `9003`. You can configure your service target URLs in the "Services" tab of the dashboard.
+            This will start the Admin UI on port '9002' and the API Proxy service on port '9003'. You can configure your service target URLs in the "Services" tab of the dashboard.
           </p>
         </CardContent>
       </Card>
