@@ -46,6 +46,8 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
     const targetUrl = new URL(`${OLLAMA_TARGET_URL}/api/${path}`);
     
     const body = await req.json();
+    console.log('[Proxy] Request Body:', JSON.stringify(body, null, 2));
+
 
     console.log(`[Proxy] Forwarding request with model "${body.model}" to target: ${targetUrl.toString()} for key "${keyDetails.name}"`);
 
@@ -72,7 +74,8 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
     });
 
     const data = await response.json();
-    
+    console.log('[Proxy] Final Response Body:', JSON.stringify(data, null, 2));
+
     return NextResponse.json(data, { status: response.status });
 
   } catch (error: any) {

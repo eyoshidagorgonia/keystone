@@ -96,6 +96,8 @@ export async function POST(req: NextRequest) {
     
     // 2. Validate and parse the request body
     const body = await req.json();
+    console.log('[Completions] Request Body:', JSON.stringify(body, null, 2));
+
     const validationResult = completionsRequestSchema.safeParse(body);
 
     if (!validationResult.success) {
@@ -124,8 +126,10 @@ export async function POST(req: NextRequest) {
       stream: false,
       format: "json", // Force JSON output to reliably detect tool calls
     };
+    
+    console.log('[Completions] Forwarding request to Ollama with model "${model}" for key "${keyDetails.name}"');
+    console.log('[Completions] Ollama Request Body:', JSON.stringify(ollamaRequestBody, null, 2));
 
-    console.log(`[Completions] Forwarding request to Ollama with model "${model}" for key "${keyDetails.name}"`);
 
     // 4. Call Ollama
     const targetUrl = new URL(`${OLLAMA_TARGET_URL}/api/generate`);
@@ -142,6 +146,7 @@ export async function POST(req: NextRequest) {
     }
 
     const ollamaResult = await ollamaResponse.json();
+    console.log('[Completions] Ollama Response Body:', JSON.stringify(ollamaResult, null, 2));
     const responseText = ollamaResult.response.trim();
 
     // 5. Parse Ollama response and format for client
@@ -149,7 +154,7 @@ export async function POST(req: NextRequest) {
         const responseJson = JSON.parse(responseText);
         if (responseJson.tool_call) {
             console.log(`[Completions] Detected tool call in response for key "${keyDetails.name}".`);
-            return NextResponse.json({
+            const finalResponse = {
                 choices: [{
                     index: 0,
                     message: {
@@ -166,14 +171,16 @@ export async function POST(req: NextRequest) {
                     },
                     finish_reason: 'tool_calls',
                 }],
-            });
+            };
+            console.log('[Completions] Final Response Body:', JSON.stringify(finalResponse, null, 2));
+            return NextResponse.json(finalResponse);
         }
     } catch (e) {
         // Not a JSON response or doesn't contain a tool_call, treat as standard text.
     }
     
     console.log(`[Completions] Detected standard text response for key "${keyDetails.name}".`);
-    return NextResponse.json({
+    const finalResponse = {
         choices: [{
             index: 0,
             message: {
@@ -182,7 +189,9 @@ export async function POST(req: NextRequest) {
             },
             finish_reason: 'stop',
         }],
-    });
+    };
+    console.log('[Completions] Final Response Body:', JSON.stringify(finalResponse, null, 2));
+    return NextResponse.json(finalResponse);
 
   } catch (error: any) {
     if (error instanceof SyntaxError) {
