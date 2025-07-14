@@ -88,9 +88,9 @@ Client Application`}
       
       <Card>
         <CardHeader>
-            <CardTitle className="font-headline">Supported Services</CardTitle>
+            <CardTitle className="font-headline">Configured Services</CardTitle>
             <CardDescription>
-                Details on the AI services you can configure in the "Services" tab.
+                Details on the AI services you have configured in the "Services" tab.
             </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -98,7 +98,7 @@ Client Application`}
                 <div className="flex items-start gap-4">
                     <Bot className="h-6 w-6 mt-1" />
                     <div>
-                        <h3 className="font-semibold">Ollama LLM</h3>
+                        <h3 className="font-semibold">{ollamaService.name}</h3>
                         <p className="text-sm text-muted-foreground mb-3">
                             Provides proxy access to any Ollama-compatible API. Models are specified via the `model` parameter in the JSON request body. This supports both the standard `/api/generate` endpoint and the OpenAI-compatible `/v1/chat/completions` endpoint.
                         </p>
@@ -122,7 +122,7 @@ Client Application`}
                 <div className="flex items-start gap-4">
                     <ImageIcon className="h-6 w-6 mt-1" />
                     <div>
-                        <h3 className="font-semibold">Stable Diffusion (AUTOMATIC1111)</h3>
+                        <h3 className="font-semibold">{sdService.name}</h3>
                         <p className="text-sm text-muted-foreground mb-3">
                             Provides proxy access to the AUTOMATIC1111 Stable Diffusion Web UI API. This specifically targets the `/sdapi/v1/txt2img` endpoint. You can dynamically switch models by passing the model checkpoint name in the `override_settings.sd_model_checkpoint` parameter.
                         </p>
@@ -153,7 +153,7 @@ Client Application`}
             <p>This endpoint forwards requests to the `/api/[...slug]` path of your active Ollama service.</p>
             <h3 className="font-semibold pt-4">Example: cURL to `/api/v1/proxy/generate`</h3>
             <CodeBlock language="bash">
-{`curl https://your-proxy-domain/api/v1/proxy/generate \\
+{`curl http://localhost:9003/api/v1/proxy/generate \\
   -X POST \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_GATEWAY_API_KEY" \\
@@ -176,14 +176,14 @@ Client Application`}
         <CardContent className="space-y-4">
             <p>Your OpenAI-compatible endpoint is:</p>
             <CodeBlock language="text">
-                {`https://your-proxy-domain/api/v1/chat/completions`}
+                {`http://localhost:9003/api/v1/chat/completions`}
             </CodeBlock>
             <p>
               This endpoint accepts a request body that mirrors the OpenAI Chat Completions API. It can be used as a drop-in replacement for services that integrate with OpenAI.
             </p>
             <h3 className="font-semibold pt-4">Example: cURL Request with Tool Calling</h3>
             <CodeBlock language="bash">
-{`curl https://your-proxy-domain/api/v1/chat/completions \\
+{`curl http://localhost:9003/api/v1/chat/completions \\
   -X POST \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_GATEWAY_API_KEY" \\
@@ -228,14 +228,14 @@ Client Application`}
         <CardContent className="space-y-4">
             <p>Your image generation endpoint is:</p>
             <CodeBlock language="text">
-                {`https://your-proxy-domain/api/v1/sd/txt2img`}
+                {`http://localhost:9003/api/v1/sd/txt2img`}
             </CodeBlock>
             <p>
               This endpoint proxies requests to the `/sdapi/v1/txt2img` endpoint of your Stable Diffusion service. You can switch the model on-the-fly by providing the `sd_model_checkpoint` in an `override_settings` object.
             </p>
             <h3 className="font-semibold pt-4">Example: cURL Request with Model Override</h3>
             <CodeBlock language="bash">
-{`curl https://your-proxy-domain/api/v1/sd/txt2img \\
+{`curl http://localhost:9003/api/v1/sd/txt2img \\
   -X POST \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_GATEWAY_API_KEY" \\
