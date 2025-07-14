@@ -89,7 +89,7 @@ Client Application`}
                 <div>
                     <h3 className="font-semibold">Ollama LLM</h3>
                     <p className="text-sm text-muted-foreground">
-                        Provides proxy access to any Ollama-compatible API. This supports both the standard `/api/generate` endpoint and the OpenAI-compatible `/api/v1/chat/completions` endpoint for advanced use cases like tool calling.
+                        Provides proxy access to any Ollama-compatible API. Models are specified via the `model` parameter in the JSON request body. This supports both the standard `/api/generate` endpoint and the OpenAI-compatible `/api/v1/chat/completions` endpoint.
                     </p>
                 </div>
             </div>
@@ -98,7 +98,7 @@ Client Application`}
                 <div>
                     <h3 className="font-semibold">Stable Diffusion (AUTOMATIC1111)</h3>
                     <p className="text-sm text-muted-foreground">
-                        Provides proxy access to the AUTOMATIC1111 Stable Diffusion Web UI API. This specifically targets the `/sdapi/v1/txt2img` endpoint and allows for dynamic model switching via the `override_settings` parameter.
+                        Provides proxy access to the AUTOMATIC1111 Stable Diffusion Web UI API. This specifically targets the `/sdapi/v1/txt2img` endpoint. You can dynamically switch models by passing the model checkpoint name in the `override_settings.sd_model_checkpoint` parameter.
                     </p>
                 </div>
             </div>
@@ -235,5 +235,3 @@ Client Application`}
     </div>
   );
 }
-
-  
