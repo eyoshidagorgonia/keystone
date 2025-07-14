@@ -4,17 +4,12 @@ import { getApiKeys } from '@/lib/apiKeyService';
 import { recordConnection } from '@/lib/connectionLogService';
 import { recordUsage } from '@/lib/metricsService';
 import { z } from 'zod';
+import { getServiceConfigs } from '@/lib/serviceConfigService';
 
-const SD_TARGET_URL = process.env.SD_TARGET_URL || 'http://host.docker.internal:7860';
-
-// A simplified schema for the txt2img endpoint.
-// We're primarily interested in the override_settings for model switching.
 const Txt2ImgRequestSchema = z.object({
   prompt: z.string(),
   override_settings: z.record(z.any()).optional(),
-  // Include other relevant fields if you want to validate them
-  // e.g., steps: z.number().optional(), cfg_scale: z.number().optional(), ...
-}).passthrough(); // Allow other fields not defined in the schema
+}).passthrough();
 
 
 export async function POST(req: NextRequest) {
@@ -39,6 +34,14 @@ export async function POST(req: NextRequest) {
     }
     console.log(`[SD Proxy] API key validated for: "${keyDetails.name}"`);
 
+    // 2. Get active service configuration
+    const serviceConfigs = await getServiceConfigs();
+    const service = serviceConfigs.find(s => s.type === 'stable-diffusion-a1111' && s.status === 'active');
+
+    if (!service) {
+        throw new Error(`No active service configuration found for type "stable-diffusion-a1111". Please configure one in the Services tab.`);
+    }
+
     // Asynchronously record connection & usage
     recordConnection({ 
         keyId: keyDetails.id, 
@@ -51,7 +54,7 @@ export async function POST(req: NextRequest) {
     
     recordUsage(keyDetails.id).catch(err => console.error(`[SD Proxy] Failed to record usage for key ${keyDetails.id}:`, err));
     
-    // 2. Validate and parse the request body
+    // 3. Validate and parse the request body
     const body = await req.json();
     console.log('[SD Proxy] Request Body:', JSON.stringify(body, null, 2));
 
@@ -65,28 +68,40 @@ export async function POST(req: NextRequest) {
     const modelName = body.override_settings?.sd_model_checkpoint || 'default';
     console.log(`[SD Proxy] Forwarding request to Stable Diffusion with model "${modelName}" for key "${keyDetails.name}"`);
 
-    // 3. Call Stable Diffusion API
-    const targetUrl = new URL(`${SD_TARGET_URL}${endpointPath}`);
-    const sdResponse = await fetch(targetUrl.toString(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-
-    if (!sdResponse.ok) {
-        const errorText = await sdResponse.text();
-        console.error(`[SD Proxy] Stable Diffusion returned an error: ${sdResponse.status} ${errorText}`);
-        return NextResponse.json({ error: 'Error from upstream service (Stable Diffusion)', details: errorText }, { status: sdResponse.status });
+    // 4. Call Stable Diffusion API
+    const targetUrl = new URL(`${service.targetUrl}${endpointPath}`);
+    const fetchHeaders: HeadersInit = { 'Content-Type': 'application/json' };
+    
+    // Add the service-specific API key if it exists
+    if (service.apiKey) {
+      fetchHeaders['X-Api-Key'] = service.apiKey;
+      console.log('[SD Proxy] Using configured API key for Stable Diffusion service.');
     }
 
-    const sdResult = await sdResponse.json();
+    const sdResponse = await fetch(targetUrl.toString(), {
+      method: 'POST',
+      headers: fetchHeaders,
+      body: JSON.stringify(body),
+    });
+    
+    const responseBodyText = await sdResponse.text();
+    console.log('[SD Proxy] Stable Diffusion Response Body:', responseBodyText);
+
+    if (!sdResponse.ok) {
+        console.error(`[SD Proxy] Stable Diffusion returned an error: ${sdResponse.status} ${responseBodyText}`);
+        return NextResponse.json({ error: 'Error from upstream service (Stable Diffusion)', details: responseBodyText }, { status: sdResponse.status });
+    }
+
+    const sdResult = JSON.parse(responseBodyText);
     console.log('[SD Proxy] Received successful response from Stable Diffusion.');
 
-    // The response contains a base64 encoded image in the `images` array.
-    // We will just forward the entire JSON response.
     return NextResponse.json(sdResult);
 
-  } catch (error: any) {
+  } catch (error: any)    {
+    if (error.message.includes('No active service configuration found')) {
+      console.error(`[SD Proxy] Configuration Error:`, error.message);
+      return NextResponse.json({ error: 'Service Not Configured', details: error.message }, { status: 503 });
+    }
     if (error instanceof SyntaxError) {
         console.error(`[SD Proxy] Invalid JSON in request body:`, error.message);
         return NextResponse.json({ error: 'Invalid request body. The provided JSON is malformed.' }, { status: 400 });
