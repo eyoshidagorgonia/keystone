@@ -276,5 +276,3 @@ Client Application`}
     </div>
   );
 }
-
-    
