@@ -91,9 +91,9 @@ export default function SettingsPage() {
         await importAllData(data)
         toast({
           title: 'Import Successful',
-          description: 'Your configuration has been restored. The application will now reload.',
+          description: 'Your configuration has been restored. The application will now reload to apply the changes.',
         })
-        // Reload the page to reflect changes
+        // Reload the page to reflect changes everywhere
         setTimeout(() => window.location.reload(), 2000);
       } catch (error: any) {
         toast({
@@ -119,7 +119,7 @@ export default function SettingsPage() {
           Settings
         </h1>
         <p className="text-muted-foreground">
-          Manage your account and application settings.
+          Manage your application configuration data.
         </p>
       </header>
 

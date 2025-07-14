@@ -24,7 +24,7 @@ const ServiceConfigSchema = z.object({
   targetUrl: z.string().url(),
   status: z.enum(['active', 'inactive']),
   createdAt: z.string().datetime(),
-  apiKey: z.string().optional(),
+  apiKey: z.string().optional().or(z.literal('')),
   supportedModels: z.string().optional(),
 });
 
@@ -69,5 +69,6 @@ export async function importAllData(data: unknown) {
     revalidatePath('/settings');
     revalidatePath('/keys');
     revalidatePath('/services');
+    revalidatePath('/documentation');
     revalidatePath('/');
 }
