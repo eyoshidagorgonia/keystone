@@ -10,7 +10,9 @@ export default async function ServicesPage() {
   const metrics = await getMetrics();
 
   const totalKeys = apiKeys.length;
-  const totalRequests = metrics.reduce((acc, stat) => acc + stat.requests, 0);
+  // Note: This is a simplified total. In a real scenario, you'd want to separate metrics per service.
+  const totalRequests = metrics.reduce((acc, stat) => acc + stat.requests, 0); 
+  
   const ollamaTargetUrl = process.env.OLLAMA_TARGET_URL || 'http://host.docker.internal:11434';
   const sdTargetUrl = process.env.SD_TARGET_URL || 'http://host.docker.internal:7860';
 
