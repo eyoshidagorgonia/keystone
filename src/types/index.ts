@@ -27,3 +27,12 @@ export interface ConnectionLog {
     country?: string;
   }
 }
+
+export interface ServiceConfig {
+  id: string;
+  name: string;
+  type: 'ollama' | 'stable-diffusion-a1111';
+  targetUrl: string;
+  status: 'active' | 'inactive';
+  createdAt: string;
+}

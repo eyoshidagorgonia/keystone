@@ -4,8 +4,7 @@ import { getApiKeys } from '@/lib/apiKeyService';
 import { recordConnection } from '@/lib/connectionLogService';
 import { recordUsage } from '@/lib/metricsService';
 import { z } from 'zod';
-
-const OLLAMA_TARGET_URL = process.env.OLLAMA_TARGET_URL || 'http://host.docker.internal:11434';
+import { getActiveServiceUrl } from '@/lib/serviceConfigService';
 
 const functionSchema = z.object({
   name: z.string(),
@@ -124,29 +123,31 @@ export async function POST(req: NextRequest) {
       prompt: ollamaPrompt,
       system: finalSystemPrompt,
       stream: false,
-      format: "json", // Force JSON output to reliably detect tool calls
+      format: "json",
     };
     
     console.log('[Completions] Forwarding request to Ollama with model "${model}" for key "${keyDetails.name}"');
     console.log('[Completions] Ollama Request Body:', JSON.stringify(ollamaRequestBody, null, 2));
 
 
-    // 4. Call Ollama
-    const targetUrl = new URL(`${OLLAMA_TARGET_URL}/api/generate`);
+    // 4. Get active service URL and call Ollama
+    const ollamaTargetUrl = await getActiveServiceUrl('ollama');
+    const targetUrl = new URL(`${ollamaTargetUrl}/api/generate`);
     const ollamaResponse = await fetch(targetUrl.toString(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(ollamaRequestBody),
     });
 
+    const responseBodyText = await ollamaResponse.text();
+    console.log('[Completions] Ollama Response Body:', responseBodyText);
+
     if (!ollamaResponse.ok) {
-        const errorText = await ollamaResponse.text();
-        console.error(`[Completions] Ollama returned an error: ${ollamaResponse.status} ${errorText}`);
-        return NextResponse.json({ error: 'Error from upstream service (Ollama)', details: errorText }, { status: ollamaResponse.status });
+        console.error(`[Completions] Ollama returned an error: ${ollamaResponse.status} ${responseBodyText}`);
+        return NextResponse.json({ error: 'Error from upstream service (Ollama)', details: responseBodyText }, { status: ollamaResponse.status });
     }
 
-    const ollamaResult = await ollamaResponse.json();
-    console.log('[Completions] Ollama Response Body:', JSON.stringify(ollamaResult, null, 2));
+    const ollamaResult = JSON.parse(responseBodyText);
     const responseText = ollamaResult.response.trim();
 
     // 5. Parse Ollama response and format for client
@@ -172,7 +173,7 @@ export async function POST(req: NextRequest) {
                     finish_reason: 'tool_calls',
                 }],
             };
-            console.log('[Completions] Final Response Body:', JSON.stringify(finalResponse, null, 2));
+            console.log('[Completions] Final Response Body to Client:', JSON.stringify(finalResponse, null, 2));
             return NextResponse.json(finalResponse);
         }
     } catch (e) {
@@ -190,10 +191,14 @@ export async function POST(req: NextRequest) {
             finish_reason: 'stop',
         }],
     };
-    console.log('[Completions] Final Response Body:', JSON.stringify(finalResponse, null, 2));
+    console.log('[Completions] Final Response Body to Client:', JSON.stringify(finalResponse, null, 2));
     return NextResponse.json(finalResponse);
 
   } catch (error: any) {
+    if (error.message.includes('No active service configuration found')) {
+      console.error(`[Completions] Configuration Error:`, error.message);
+      return NextResponse.json({ error: 'Service Not Configured', details: error.message }, { status: 503 });
+    }
     if (error instanceof SyntaxError) {
         console.error(`[Completions] Invalid JSON in request body:`, error.message);
         return NextResponse.json({ error: 'Invalid request body. The provided JSON is malformed.' }, { status: 400 });

@@ -3,15 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getApiKeys } from '@/lib/apiKeyService';
 import { recordUsage } from '@/lib/metricsService';
 import { recordConnection } from '@/lib/connectionLogService';
-
-
-const OLLAMA_TARGET_URL = process.env.OLLAMA_TARGET_URL || 'http://host.docker.internal:11434';
+import { getActiveServiceUrl } from '@/lib/serviceConfigService';
 
 async function handleProxyRequest(req: NextRequest, { params }: { params: { slug:string[] } }) {
   const path = params.slug.join('/');
   console.log(`[Proxy] Received ${req.method} request for /api/${path}`);
 
   try {
+    // 1. Authenticate the request
     const authorization = req.headers.get('Authorization');
     if (!authorization || !authorization.startsWith('Bearer ')) {
       console.error('[Proxy] Unauthorized: Missing or invalid Authorization header.');
@@ -42,9 +41,11 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
         console.error(`[Proxy] Failed to record connection for key ${keyDetails.id}:`, err);
     });
 
-    // Ollama endpoints are prefixed with /api
-    const targetUrl = new URL(`${OLLAMA_TARGET_URL}/api/${path}`);
+    // 2. Get active service URL dynamically
+    const ollamaTargetUrl = await getActiveServiceUrl('ollama');
+    const targetUrl = new URL(`${ollamaTargetUrl}/api/${path}`);
     
+    // 3. Forward the request
     const body = await req.json();
     console.log('[Proxy] Request Body:', JSON.stringify(body, null, 2));
 
@@ -60,12 +61,12 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
     });
 
     console.log(`[Proxy] Received response with status ${response.status} from target for key "${keyDetails.name}".`);
+    const responseBodyText = await response.text();
+    console.log('[Proxy] Ollama Response Body:', responseBodyText);
     
-    // Check if the response was successful. If not, forward the error response.
     if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[Proxy] Target returned an error for key "${keyDetails.name}": ${response.status} ${errorText}`);
-        return NextResponse.json({ error: 'Error from upstream service (Ollama)', details: errorText }, { status: response.status });
+        console.error(`[Proxy] Target returned an error for key "${keyDetails.name}": ${response.status} ${responseBodyText}`);
+        return NextResponse.json({ error: 'Error from upstream service (Ollama)', details: responseBodyText }, { status: response.status });
     }
     
     // Asynchronously record usage without blocking the response
@@ -73,12 +74,16 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
         console.error(`[Proxy] Failed to record usage for key ${keyDetails.id}:`, err);
     });
 
-    const data = await response.json();
-    console.log('[Proxy] Final Response Body:', JSON.stringify(data, null, 2));
+    const data = JSON.parse(responseBodyText);
+    console.log('[Proxy] Final Response Body to Client:', JSON.stringify(data, null, 2));
 
     return NextResponse.json(data, { status: response.status });
 
   } catch (error: any) {
+    if (error.message.includes('No active service configuration found')) {
+      console.error(`[Proxy] Configuration Error:`, error.message);
+      return NextResponse.json({ error: 'Service Not Configured', details: error.message }, { status: 503 });
+    }
     if (error instanceof SyntaxError) {
         console.error(`[Proxy] Invalid JSON in request body:`, error.message);
         return NextResponse.json({ error: 'Invalid request body. The provided JSON is malformed.' }, { status: 400 });
