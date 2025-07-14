@@ -36,24 +36,26 @@ export function DocumentationClientPage({ services }: { services: ServiceConfig[
     while(walker.nextNode()) {
       const currentNode = walker.currentNode;
       if (currentNode.nodeType === Node.TEXT_NODE) {
-        text += currentNode.textContent;
+        // Simple text nodes, like in <p> or <hX>
+        if (currentNode.parentElement?.tagName !== 'CODE') {
+           text += currentNode.textContent;
+        }
       } else if (currentNode.nodeType === Node.ELEMENT_NODE) {
         const element = currentNode as HTMLElement;
-        if (element.tagName === 'H1' || element.tagName === 'H2' || element.tagName === 'H3') {
+        if (['H1', 'H2', 'H3'].includes(element.tagName)) {
            text += `\n\n## ${element.textContent}\n`;
         } else if (element.tagName === 'P') {
            text += `\n${element.textContent}\n`;
-        } else if (element.tagName === 'CODE') {
+        } else if (element.tagName === 'CODE' && element.parentElement?.tagName === 'PRE') {
             text += `\n\`\`\`\n${element.textContent}\n\`\`\`\n`;
-        } else if (element.tagName === 'DIV' && element.classList.contains('flex-wrap')) {
+        } else if (element.classList.contains('flex-wrap')) { // For model badges
             const badges = Array.from(element.querySelectorAll('div[class*="badge"]'));
-            text += badges.map(b => b.textContent).join(', ') + '\n';
+            text += '\n' + badges.map(b => b.textContent).join(', ') + '\n';
         }
       }
     }
     return text.replace(/(\n\s*){3,}/g, '\n\n').trim();
   };
-
 
   return (
     <div className="flex flex-col gap-8" ref={pageRef}>
