@@ -1,3 +1,4 @@
+
 version: '3.8'
 
 services:
@@ -15,6 +16,8 @@ services:
     environment:
       - KEYSTONE_MODE=admin
       - PORT=9002
+      - OLLAMA_TARGET_URL=http://host.docker.internal:11434
+      - SD_TARGET_URL=http://host.docker.internal:7860
     command: ["npm", "run", "start"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -33,6 +36,8 @@ services:
     environment:
       - KEYSTONE_MODE=api
       - PORT=9003
+      - OLLAMA_TARGET_URL=http://host.docker.internal:11434
+      - SD_TARGET_URL=http://host.docker.internal:7860
     command: ["npm", "run", "start"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
