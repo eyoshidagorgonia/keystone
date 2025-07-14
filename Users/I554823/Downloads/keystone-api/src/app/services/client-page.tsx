@@ -95,17 +95,11 @@ export function ServicesClientPage({ initialServices }: { initialServices: Servi
               </CardHeader>
               <CardContent>
                 <div className="space-y-4 text-sm">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <h3 className="font-semibold text-muted-foreground">Status</h3>
-                             <Badge variant={service.status === "active" ? "secondary" : "destructive"} className={service.status === 'active' ? "bg-green-500/20 text-green-300 border-none" : ""}>
-                                {service.status}
-                            </Badge>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-muted-foreground">Gateway Auth</h3>
-                            <p>API Key (via Proxy)</p>
-                        </div>
+                    <div>
+                        <h3 className="font-semibold text-muted-foreground">Status</h3>
+                         <Badge variant={service.status === "active" ? "secondary" : "destructive"} className={service.status === 'active' ? "bg-green-500/20 text-green-300 border-none" : ""}>
+                            {service.status}
+                        </Badge>
                     </div>
                     <div>
                          <h3 className="font-semibold text-muted-foreground">Target URL</h3>
@@ -125,6 +119,10 @@ export function ServicesClientPage({ initialServices }: { initialServices: Servi
                         <p className={service.apiKey ? '' : 'text-muted-foreground'}>
                             {service.apiKey ? 'Set' : 'Not Set'}
                         </p>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-muted-foreground">Gateway Auth</h3>
+                        <p>API Key (via Proxy)</p>
                     </div>
                      {supportedModels.length > 0 && (
                         <div>
