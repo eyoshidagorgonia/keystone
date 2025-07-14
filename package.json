@@ -8,7 +8,7 @@
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build": "next build && tsc --project tsconfig.server.json",
-    "start": "NODE_ENV=production node dist/server.js",
+    "start": "NODE_ENV=production node dist/server.js --port $PORT",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "jest --watch"
