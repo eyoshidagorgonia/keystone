@@ -18,6 +18,7 @@ import { z } from "zod"
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -45,6 +46,7 @@ interface EditServiceDialogProps {
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   targetUrl: z.string().url("Please enter a valid URL (e.g., http://localhost:11434)."),
+  apiKey: z.string().optional(),
   status: z.enum(['active', 'inactive']),
 })
 
@@ -54,6 +56,7 @@ export function EditServiceDialog({ open, onOpenChange, onServiceUpdated, servic
     defaultValues: {
       name: service.name,
       targetUrl: service.targetUrl,
+      apiKey: service.apiKey || "",
       status: service.status,
     },
   })
@@ -62,6 +65,7 @@ export function EditServiceDialog({ open, onOpenChange, onServiceUpdated, servic
     form.reset({
         name: service.name,
         targetUrl: service.targetUrl,
+        apiKey: service.apiKey || "",
         status: service.status,
     });
   }, [service, form]);
@@ -122,6 +126,22 @@ export function EditServiceDialog({ open, onOpenChange, onServiceUpdated, servic
                         <FormControl>
                             <Input placeholder="http://host.docker.internal:11434" {...field} />
                         </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="apiKey"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>AI Service API Key (Optional)</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Leave blank if not needed" {...field} />
+                        </FormControl>
+                         <FormDescription>
+                            The API key for the target service itself, if required.
+                        </FormDescription>
                         <FormMessage />
                         </FormItem>
                     )}

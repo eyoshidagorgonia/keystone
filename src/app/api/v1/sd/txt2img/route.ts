@@ -4,7 +4,7 @@ import { getApiKeys } from '@/lib/apiKeyService';
 import { recordConnection } from '@/lib/connectionLogService';
 import { recordUsage } from '@/lib/metricsService';
 import { z } from 'zod';
-import { getActiveServiceUrl } from '@/lib/serviceConfigService';
+import { getServiceConfigs } from '@/lib/serviceConfigService';
 
 const Txt2ImgRequestSchema = z.object({
   prompt: z.string(),
@@ -34,6 +34,14 @@ export async function POST(req: NextRequest) {
     }
     console.log(`[SD Proxy] API key validated for: "${keyDetails.name}"`);
 
+    // 2. Get active service configuration
+    const serviceConfigs = await getServiceConfigs();
+    const service = serviceConfigs.find(s => s.type === 'stable-diffusion-a1111' && s.status === 'active');
+
+    if (!service) {
+        throw new Error(`No active service configuration found for type "stable-diffusion-a1111". Please configure one in the Services tab.`);
+    }
+
     // Asynchronously record connection & usage
     recordConnection({ 
         keyId: keyDetails.id, 
@@ -46,7 +54,7 @@ export async function POST(req: NextRequest) {
     
     recordUsage(keyDetails.id).catch(err => console.error(`[SD Proxy] Failed to record usage for key ${keyDetails.id}:`, err));
     
-    // 2. Validate and parse the request body
+    // 3. Validate and parse the request body
     const body = await req.json();
     console.log('[SD Proxy] Request Body:', JSON.stringify(body, null, 2));
 
@@ -60,12 +68,19 @@ export async function POST(req: NextRequest) {
     const modelName = body.override_settings?.sd_model_checkpoint || 'default';
     console.log(`[SD Proxy] Forwarding request to Stable Diffusion with model "${modelName}" for key "${keyDetails.name}"`);
 
-    // 3. Get active service URL and call Stable Diffusion API
-    const sdTargetUrl = await getActiveServiceUrl('stable-diffusion-a1111');
-    const targetUrl = new URL(`${sdTargetUrl}${endpointPath}`);
+    // 4. Call Stable Diffusion API
+    const targetUrl = new URL(`${service.targetUrl}${endpointPath}`);
+    const fetchHeaders: HeadersInit = { 'Content-Type': 'application/json' };
+    
+    // Add the service-specific API key if it exists
+    if (service.apiKey) {
+      fetchHeaders['X-Api-Key'] = service.apiKey;
+      console.log('[SD Proxy] Using configured API key for Stable Diffusion service.');
+    }
+
     const sdResponse = await fetch(targetUrl.toString(), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: fetchHeaders,
       body: JSON.stringify(body),
     });
     

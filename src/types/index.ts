@@ -35,4 +35,5 @@ export interface ServiceConfig {
   targetUrl: string;
   status: 'active' | 'inactive';
   createdAt: string;
+  apiKey?: string; // Optional API key for the target service itself
 }

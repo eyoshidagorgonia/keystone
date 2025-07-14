@@ -89,12 +89,18 @@ export function ServicesClientPage({ initialServices }: { initialServices: Servi
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3 text-sm">
-                    <div>
-                        <h3 className="font-semibold text-muted-foreground">Status</h3>
-                         <Badge variant={service.status === "active" ? "secondary" : "destructive"} className={service.status === 'active' ? "bg-green-500/20 text-green-300 border-none" : ""}>
-                            {service.status}
-                        </Badge>
+                <div className="space-y-4 text-sm">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <h3 className="font-semibold text-muted-foreground">Status</h3>
+                             <Badge variant={service.status === "active" ? "secondary" : "destructive"} className={service.status === 'active' ? "bg-green-500/20 text-green-300 border-none" : ""}>
+                                {service.status}
+                            </Badge>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-muted-foreground">Gateway Auth</h3>
+                            <p>API Key</p>
+                        </div>
                     </div>
                     <div>
                          <h3 className="font-semibold text-muted-foreground">Target URL</h3>
@@ -109,9 +115,11 @@ export function ServicesClientPage({ initialServices }: { initialServices: Servi
                             </Tooltip>
                          </TooltipProvider>
                     </div>
-                     <div>
-                        <h3 className="font-semibold text-muted-foreground">Authentication</h3>
-                        <p>API Key (via Proxy)</p>
+                    <div>
+                        <h3 className="font-semibold text-muted-foreground">AI Service API Key</h3>
+                        <p className={service.apiKey ? '' : 'text-muted-foreground'}>
+                            {service.apiKey ? 'Set' : 'Not Set'}
+                        </p>
                     </div>
                 </div>
               </CardContent>
