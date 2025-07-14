@@ -7,6 +7,7 @@ export async function GET() {
     const keys = await getApiKeys();
     return NextResponse.json(keys);
   } catch (error: any) {
-    return NextResponse.json({ error: 'Failed to retrieve API keys', details: error.message }, { status: 500 });
+    console.error(`[Keys API] Failed to retrieve API keys:`, error);
+    return NextResponse.json({ error: 'Failed to retrieve API keys from the data store.', details: error.message }, { status: 500 });
   }
 }

@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     const authorization = req.headers.get('Authorization');
     if (!authorization || !authorization.startsWith('Bearer ')) {
       console.error('[Completions] Unauthorized: Missing or invalid Authorization header.');
-      return NextResponse.json({ error: 'Unauthorized: Missing or invalid API key' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized: Missing or invalid API key. Header should be in the format "Authorization: Bearer YOUR_API_KEY".' }, { status: 401 });
     }
     
     const apiKey = authorization.split(' ')[1];
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
 
     if (!validationResult.success) {
       console.error('[Completions] Invalid request body:', validationResult.error.errors);
-      return NextResponse.json({ error: 'Invalid request body', details: validationResult.error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid request body', details: validationResult.error.flatten() }, { status: 400 });
     }
     
     const { model, messages, tools } = validationResult.data;
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
     if (!ollamaResponse.ok) {
         const errorText = await ollamaResponse.text();
         console.error(`[Completions] Ollama returned an error: ${ollamaResponse.status} ${errorText}`);
-        return new NextResponse(errorText, { status: ollamaResponse.status, headers: { 'Content-Type': 'application/json' }, statusText: "Error from Ollama" });
+        return NextResponse.json({ error: 'Error from upstream service (Ollama)', details: errorText }, { status: ollamaResponse.status });
     }
 
     const ollamaResult = await ollamaResponse.json();
@@ -187,9 +187,9 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     if (error instanceof SyntaxError) {
         console.error(`[Completions] Invalid JSON in request body:`, error.message);
-        return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+        return NextResponse.json({ error: 'Invalid request body. The provided JSON is malformed.' }, { status: 400 });
     }
     console.error(`[Completions] Internal Server Error:`, error);
-    return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'An unexpected internal error occurred.', details: error.message }, { status: 500 });
   }
 }

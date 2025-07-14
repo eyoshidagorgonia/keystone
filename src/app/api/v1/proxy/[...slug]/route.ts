@@ -15,7 +15,7 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
     const authorization = req.headers.get('Authorization');
     if (!authorization || !authorization.startsWith('Bearer ')) {
       console.error('[Proxy] Unauthorized: Missing or invalid Authorization header.');
-      return NextResponse.json({ error: 'Unauthorized: Missing or invalid API key' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized: Missing or invalid API key. Header should be in the format "Authorization: Bearer YOUR_API_KEY".' }, { status: 401 });
     }
     
     const apiKey = authorization.split(' ')[1];
@@ -59,11 +59,11 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
 
     console.log(`[Proxy] Received response with status ${response.status} from target for key "${keyDetails.name}".`);
     
-    // Check if the response was successful. If not, forward the error response as text.
+    // Check if the response was successful. If not, forward the error response.
     if (!response.ok) {
         const errorText = await response.text();
         console.error(`[Proxy] Target returned an error for key "${keyDetails.name}": ${response.status} ${errorText}`);
-        return new NextResponse(errorText, { status: response.status, headers: { 'Content-Type': 'application/json' }, statusText: "Error from Ollama" });
+        return NextResponse.json({ error: 'Error from upstream service (Ollama)', details: errorText }, { status: response.status });
     }
     
     // Asynchronously record usage without blocking the response
@@ -78,18 +78,21 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
   } catch (error: any) {
     if (error instanceof SyntaxError) {
         console.error(`[Proxy] Invalid JSON in request body:`, error.message);
-        return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+        return NextResponse.json({ error: 'Invalid request body. The provided JSON is malformed.' }, { status: 400 });
     }
     console.error(`[Proxy] Internal Server Error:`, error);
-    return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'An unexpected internal error occurred.', details: error.message }, { status: 500 });
   }
 }
 
-export async function GET(req: NextRequest) {
-    const path = req.nextUrl.pathname;
-    console.warn(`[Proxy] Blocked unsupported GET request for ${path}`);
+export async function GET(req: NextRequest, { params }: { params: { slug: string[] } }) {
+    const path = params.slug.join('/');
+    console.warn(`[Proxy] Blocked unsupported GET request for /api/${path}`);
     return NextResponse.json(
-        { error: `Method Not Allowed. This endpoint does not support GET requests. Please use POST. Path: ${path}` },
+        { 
+          error: 'Method Not Allowed',
+          details: `The endpoint at /api/${path} does not support GET requests. Please use POST.`
+        },
         { status: 405 }
     );
 }
