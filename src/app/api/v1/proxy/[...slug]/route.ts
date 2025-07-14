@@ -85,9 +85,16 @@ async function handleProxyRequest(req: NextRequest, { params }: { params: { slug
   }
 }
 
+export async function GET(req: NextRequest) {
+    const path = req.nextUrl.pathname;
+    console.warn(`[Proxy] Blocked unsupported GET request for ${path}`);
+    return NextResponse.json(
+        { error: `Method Not Allowed. This endpoint does not support GET requests. Please use POST. Path: ${path}` },
+        { status: 405 }
+    );
+}
 
 export const POST = handleProxyRequest;
-export const GET = handleProxyRequest;
 export const PUT = handleProxyRequest;
 export const DELETE = handleProxyRequest;
 export const PATCH = handleProxyRequest;
