@@ -1,10 +1,20 @@
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { CodeBlock } from "@/components/code-block";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Info, Cpu, Bot, ImageIcon } from "lucide-react";
+import { getServiceConfigs } from "@/lib/serviceConfigService";
 
-export default function DocumentationPage() {
+export default async function DocumentationPage() {
+  const services = await getServiceConfigs();
+  const ollamaService = services.find(s => s.type === 'ollama');
+  const sdService = services.find(s => s.type === 'stable-diffusion-a1111');
+
+  const parseModels = (modelsString?: string): string[] => {
+    if (!modelsString) return [];
+    return modelsString.split(',').map(m => m.trim()).filter(Boolean);
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <header>
@@ -84,24 +94,51 @@ Client Application`}
             </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-            <div className="flex items-start gap-4">
-                <Bot className="h-6 w-6 mt-1" />
-                <div>
-                    <h3 className="font-semibold">Ollama LLM</h3>
-                    <p className="text-sm text-muted-foreground">
-                        Provides proxy access to any Ollama-compatible API. This supports both the standard `/api/generate` endpoint and the OpenAI-compatible `/api/v1/chat/completions` endpoint for advanced use cases like tool calling.
-                    </p>
+            {ollamaService ? (
+                <div className="flex items-start gap-4">
+                    <Bot className="h-6 w-6 mt-1" />
+                    <div>
+                        <h3 className="font-semibold">Ollama LLM</h3>
+                        <p className="text-sm text-muted-foreground mb-3">
+                            Provides proxy access to any Ollama-compatible API. Models are specified via the `model` parameter in the JSON request body. This supports both the standard `/api/generate` endpoint and the OpenAI-compatible `/v1/chat/completions` endpoint.
+                        </p>
+                        <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-2"><Cpu className="h-4 w-4" /> Configured Models</h4>
+                        <div className="flex flex-wrap gap-2">
+                            {parseModels(ollamaService.supportedModels).length > 0 ? (
+                                parseModels(ollamaService.supportedModels).map(model => (
+                                    <Badge key={model} variant="outline" className="font-mono text-xs">{model}</Badge>
+                                ))
+                            ) : (
+                                <p className="text-xs text-muted-foreground">No specific models listed for this service.</p>
+                            )}
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div className="flex items-start gap-4">
-                <ImageIcon className="h-6 w-6 mt-1" />
-                <div>
-                    <h3 className="font-semibold">Stable Diffusion (AUTOMATIC1111)</h3>
-                    <p className="text-sm text-muted-foreground">
-                        Provides proxy access to the AUTOMATIC1111 Stable Diffusion Web UI API. This specifically targets the `/sdapi/v1/txt2img` endpoint and allows for dynamic model switching via the `override_settings` parameter.
-                    </p>
+            ) : ( <p className="text-sm text-muted-foreground">Ollama service not configured.</p> )}
+            
+            <div className="border-b"></div>
+
+            {sdService ? (
+                <div className="flex items-start gap-4">
+                    <ImageIcon className="h-6 w-6 mt-1" />
+                    <div>
+                        <h3 className="font-semibold">Stable Diffusion (AUTOMATIC1111)</h3>
+                        <p className="text-sm text-muted-foreground mb-3">
+                            Provides proxy access to the AUTOMATIC1111 Stable Diffusion Web UI API. This specifically targets the `/sdapi/v1/txt2img` endpoint. You can dynamically switch models by passing the model checkpoint name in the `override_settings.sd_model_checkpoint` parameter.
+                        </p>
+                        <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-2"><Cpu className="h-4 w-4" /> Configured Models</h4>
+                         <div className="flex flex-wrap gap-2">
+                             {parseModels(sdService.supportedModels).length > 0 ? (
+                                parseModels(sdService.supportedModels).map(model => (
+                                    <Badge key={model} variant="outline" className="font-mono text-xs">{model}</Badge>
+                                ))
+                            ) : (
+                                <p className="text-xs text-muted-foreground">No specific models listed for this service.</p>
+                            )}
+                        </div>
+                    </div>
                 </div>
-            </div>
+             ) : ( <p className="text-sm text-muted-foreground">Stable Diffusion service not configured.</p> )}
         </CardContent>
       </Card>
 
@@ -235,5 +272,3 @@ Client Application`}
     </div>
   );
 }
-
-    
