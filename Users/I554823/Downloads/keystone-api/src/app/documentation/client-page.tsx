@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -108,7 +109,7 @@ Client Application`}
             {`Authorization: Bearer YOUR_GATEWAY_API_KEY`}
           </CodeBlock>
            <p>
-            You can generate and manage API keys from the "Gateway API Keys" tab in the dashboard.
+            You can generate and manage API keys from the "API Keys" tab in the dashboard.
           </p>
         </CardContent>
       </Card>
@@ -299,3 +300,5 @@ Client Application`}
     </div>
   );
 }
+
+    
