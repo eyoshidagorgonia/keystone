@@ -1,0 +1,23 @@
+
+[
+  {
+    "id": "svc_ollama_default",
+    "name": "Default Ollama Service",
+    "type": "ollama",
+    "targetUrl": "http://host.docker.internal:11434",
+    "status": "active",
+    "createdAt": "2024-07-22T10:00:00.000Z",
+    "apiKey": "",
+    "supportedModels": "llama3, gemma"
+  },
+  {
+    "id": "svc_sd_default",
+    "name": "Default Stable Diffusion",
+    "type": "stable-diffusion-a1111",
+    "targetUrl": "http://host.docker.internal:7860",
+    "status": "active",
+    "createdAt": "2024-07-22T10:00:00.000Z",
+    "apiKey": "",
+    "supportedModels": "sd_xl_base_1.0.safetensors"
+  }
+]
