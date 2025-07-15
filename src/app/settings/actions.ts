@@ -44,7 +44,7 @@ export async function exportAllData() {
 
 
 export async function importAllData(data: unknown) {
-    console.log('[Settings Action] Starting data import...');
+    console.log('[Settings Action] Starting data import from file...');
     
     const validationResult = ImportDataSchema.safeParse(data);
 
@@ -73,4 +73,18 @@ export async function importAllData(data: unknown) {
     revalidatePath('/');
 }
 
-    
+export async function importAllDataFromString(jsonString: string) {
+    console.log('[Settings Action] Starting data import from text...');
+    try {
+        const data = JSON.parse(jsonString);
+        await importAllData(data);
+    } catch (error: any) {
+        if (error instanceof SyntaxError) {
+            console.error('[Settings Action] Import from text failed: Invalid JSON format.', error);
+            throw new Error('Invalid JSON format. Please check the pasted text.');
+        }
+        console.error('[Settings Action] Import from text failed:', error);
+        // Re-throw Zod validation errors or other errors from importAllData
+        throw error;
+    }
+}
