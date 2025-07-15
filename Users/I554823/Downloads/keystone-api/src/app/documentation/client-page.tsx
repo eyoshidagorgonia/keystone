@@ -7,8 +7,11 @@ import { CodeBlock } from "@/components/code-block";
 import { Badge } from "@/components/ui/badge";
 import { Cpu, Bot, ImageIcon } from "lucide-react";
 import type { ServiceConfig } from "@/types";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 export function DocumentationClientPage({ services }: { services: ServiceConfig[] }) {
+  const [baseUrl, setBaseUrl] = React.useState("http://localhost:9003");
   const ollamaService = services.find(s => s.type === 'ollama');
   const sdService = services.find(s => s.type === 'stable-diffusion-a1111');
 
@@ -27,6 +30,27 @@ export function DocumentationClientPage({ services }: { services: ServiceConfig[
             </p>
         </div>
       </header>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-headline">API Endpoint Base URL</CardTitle>
+          <CardDescription>
+            Use this to set the base URL for the code examples below.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid w-full max-w-lg items-center gap-1.5">
+            <Label htmlFor="base-url">Base URL</Label>
+            <Input 
+              type="text" 
+              id="base-url" 
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              placeholder="http://your-api-proxy-url" 
+            />
+          </div>
+        </CardContent>
+      </Card>
 
        <Card>
         <CardHeader>
@@ -157,7 +181,7 @@ Client Application`}
             <p>This endpoint forwards requests to the '/api/[...slug]' path of your active Ollama service.</p>
             <h3 className="font-semibold pt-4">Example: cURL to '/api/v1/proxy/generate'</h3>
             <CodeBlock language="bash">
-{`curl http://localhost:9003/api/v1/proxy/generate \\
+{`curl ${baseUrl}/api/v1/proxy/generate \\
   -X POST \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_GATEWAY_API_KEY" \\
@@ -180,14 +204,14 @@ Client Application`}
         <CardContent className="space-y-4">
             <p>Your OpenAI-compatible endpoint is:</p>
             <CodeBlock language="text">
-                {`http://localhost:9003/api/v1/chat/completions`}
+                {`${baseUrl}/api/v1/chat/completions`}
             </CodeBlock>
             <p>
               This endpoint accepts a request body that mirrors the OpenAI Chat Completions API. It can be used as a drop-in replacement for services that integrate with OpenAI.
             </p>
             <h3 className="font-semibold pt-4">Example: cURL Request with Tool Calling</h3>
             <CodeBlock language="bash">
-{`curl http://localhost:9003/api/v1/chat/completions \\
+{`curl ${baseUrl}/api/v1/chat/completions \\
   -X POST \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_GATEWAY_API_KEY" \\
@@ -232,14 +256,14 @@ Client Application`}
         <CardContent className="space-y-4">
             <p>Your image generation endpoint is:</p>
             <CodeBlock language="text">
-                {`http://localhost:9003/api/v1/sd/txt2img`}
+                {`${baseUrl}/api/v1/sd/txt2img`}
             </CodeBlock>
             <p>
               This endpoint proxies requests to the '/sdapi/v1/txt2img' endpoint of your Stable Diffusion service. You can switch the model on-the-fly by providing the 'sd_model_checkpoint' in an 'override_settings' object.
             </p>
             <h3 className="font-semibold pt-4">Example: cURL Request with Model Override</h3>
             <CodeBlock language="bash">
-{`curl http://localhost:9003/api/v1/sd/txt2img \\
+{`curl ${baseUrl}/api/v1/sd/txt2img \\
   -X POST \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_GATEWAY_API_KEY" \\
