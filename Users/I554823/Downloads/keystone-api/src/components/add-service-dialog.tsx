@@ -34,6 +34,7 @@ import {
 import type { ServiceConfig } from "@/types"
 import { toast } from "@/hooks/use-toast"
 import { addService } from "@/app/services/actions"
+import { useEffect } from "react"
 
 interface AddServiceDialogProps {
   open: boolean
@@ -47,6 +48,7 @@ const formSchema = z.object({
   targetUrl: z.string().url("Please enter a valid URL (e.g., http://localhost:11434)."),
   apiKey: z.string().optional(),
   status: z.enum(['active', 'inactive']),
+  supportedModels: z.string().optional(),
 })
 
 export function AddServiceDialog({ open, onOpenChange, onServiceAdded }: AddServiceDialogProps) {
@@ -57,8 +59,20 @@ export function AddServiceDialog({ open, onOpenChange, onServiceAdded }: AddServ
       targetUrl: "",
       apiKey: "",
       status: 'active',
+      supportedModels: "",
     },
   })
+
+  const serviceType = form.watch("type");
+
+  useEffect(() => {
+    if (serviceType === 'ollama') {
+        form.setValue('targetUrl', process.env.NEXT_PUBLIC_OLLAMA_TARGET_URL || 'http://host.docker.internal:11434');
+    } else if (serviceType === 'stable-diffusion-a1111') {
+        form.setValue('targetUrl', process.env.NEXT_PUBLIC_SD_TARGET_URL || 'http://host.docker.internal:7860');
+    }
+  }, [serviceType, form]);
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const newService = await addService(values);
@@ -125,6 +139,22 @@ export function AddServiceDialog({ open, onOpenChange, onServiceAdded }: AddServ
                         <FormControl>
                             <Input placeholder="http://host.docker.internal:11434" {...field} />
                         </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="supportedModels"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Supported Models (Optional)</FormLabel>
+                        <FormControl>
+                            <Input placeholder="llama3, gemma:7b, etc." {...field} />
+                        </FormControl>
+                        <FormDescription>
+                            A comma-separated list of models for this service.
+                        </FormDescription>
                         <FormMessage />
                         </FormItem>
                     )}

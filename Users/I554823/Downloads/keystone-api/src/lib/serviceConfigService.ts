@@ -24,15 +24,59 @@ async function getServicesCollection() {
   }
 }
 
+function createDefaultServices(): ServiceConfig[] {
+    const defaults: ServiceConfig[] = [];
+    
+    if (process.env.OLLAMA_TARGET_URL) {
+        defaults.push({
+            id: 'svc_ollama_default',
+            name: 'Default Ollama Service',
+            type: 'ollama',
+            targetUrl: process.env.OLLAMA_TARGET_URL,
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            apiKey: '',
+            supportedModels: 'llama3, gemma'
+        });
+        console.log(`[Service Config] Created default Ollama service with URL: ${process.env.OLLAMA_TARGET_URL}`);
+    }
+
+    if (process.env.SD_TARGET_URL) {
+        defaults.push({
+            id: 'svc_sd_default',
+            name: 'Default Stable Diffusion',
+            type: 'stable-diffusion-a1111',
+            targetUrl: process.env.SD_TARGET_URL,
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            apiKey: '',
+            supportedModels: 'sd_xl_base_1.0.safetensors'
+        });
+         console.log(`[Service Config] Created default Stable Diffusion service with URL: ${process.env.SD_TARGET_URL}`);
+    }
+
+    return defaults;
+}
+
+
 async function getLocalServices(): Promise<ServiceConfig[]> {
   try {
     const fileContent = await fs.readFile(DATA_FILE_PATH, 'utf-8');
-    return JSON.parse(fileContent);
+    const services = JSON.parse(fileContent);
+    // If the file is empty or contains an empty array, create defaults
+    if (Array.isArray(services) && services.length === 0) {
+        console.log('[Service Config] Local services file is empty. Populating with defaults from .env');
+        const defaultServices = createDefaultServices();
+        await saveLocalServices(defaultServices);
+        return defaultServices;
+    }
+    return services;
   } catch (error: any) {
     if (error.code === 'ENOENT') {
-      console.log('[Service Config] Data file not found. Creating a new one.');
-      await saveLocalServices([]);
-      return [];
+      console.log('[Service Config] Data file not found. Creating a new one with defaults from .env');
+      const defaultServices = createDefaultServices();
+      await saveLocalServices(defaultServices);
+      return defaultServices;
     }
     console.error('[Service Config] Failed to read local services file:', error);
     throw new Error('Could not read local services. Please check file permissions and existence of data/services.json.');
@@ -53,8 +97,18 @@ export async function getServiceConfigs(): Promise<ServiceConfig[]> {
   if (useFirestore) {
     try {
       const collection = await getServicesCollection();
-      const snapshot = await collection.orderBy('createdAt', 'asc').get();
-      if (snapshot.empty) return [];
+      const snapshot = await collection.get();
+      if (snapshot.empty) {
+        console.log('[Service Config] Firestore is empty. Populating with defaults from .env');
+        const defaultServices = createDefaultServices();
+        const batch = db.batch();
+        defaultServices.forEach(service => {
+            const docRef = collection.doc(service.id);
+            batch.set(docRef, service);
+        });
+        await batch.commit();
+        return defaultServices;
+      }
       return snapshot.docs.map(doc => doc.data() as ServiceConfig);
     } catch (e) {
       // Fallback on error
@@ -63,13 +117,11 @@ export async function getServiceConfigs(): Promise<ServiceConfig[]> {
   return getLocalServices();
 }
 
-export async function addServiceConfig(serviceData: Omit<ServiceConfig, 'id' | 'createdAt' | 'supportedModels' | 'apiKey'> & { supportedModels?: string, apiKey?: string }): Promise<ServiceConfig> {
+export async function addServiceConfig(serviceData: Omit<ServiceConfig, 'id' | 'createdAt'>): Promise<ServiceConfig> {
   const newService: ServiceConfig = {
     id: `svc_${Date.now()}`,
     createdAt: new Date().toISOString(),
     ...serviceData,
-    supportedModels: serviceData.supportedModels || '',
-    apiKey: serviceData.apiKey || '',
   };
 
   if (useFirestore) {
