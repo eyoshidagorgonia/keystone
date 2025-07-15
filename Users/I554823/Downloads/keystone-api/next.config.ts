@@ -19,10 +19,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  env: {
-    NEXT_PUBLIC_OLLAMA_TARGET_URL: process.env.OLLAMA_TARGET_URL,
-    NEXT_PUBLIC_SD_TARGET_URL: process.env.SD_TARGET_URL,
-  }
 };
 
 export default nextConfig;
