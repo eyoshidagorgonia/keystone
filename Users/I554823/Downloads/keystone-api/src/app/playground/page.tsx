@@ -39,7 +39,7 @@ export default function PlaygroundPage() {
 
   // Ollama state
   const [ollamaPrompt, setOllamaPrompt] = React.useState('Why is the sky blue?');
-  const [ollamaModel, setOllamaModel] = React.useState('llama3.1:8b');
+  const [ollamaModel, setOllamaModel] = React.useState('llama3');
   const [ollamaResponse, setOllamaResponse] = React.useState<string>('');
 
   // Stable Diffusion state
@@ -57,8 +57,8 @@ export default function PlaygroundPage() {
             throw new Error('Failed to fetch API keys');
         }
         const keys = await response.json();
-        setApiKeys(keys);
         const activeKeys = keys.filter((k: ApiKey) => k.status === 'active');
+        setApiKeys(activeKeys);
         if (activeKeys.length > 0) {
           setSelectedKey(activeKeys[0].key);
         }
@@ -68,6 +68,15 @@ export default function PlaygroundPage() {
     }
     fetchKeys();
   }, []);
+  
+  const handleError = async (response: Response) => {
+    try {
+        const errorData = await response.json();
+        return errorData.details || errorData.error || 'An unknown error occurred.';
+    } catch (e) {
+        return `Request failed with status ${response.status}. Could not parse error response.`;
+    }
+  }
 
   const handleOllamaSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,8 +97,8 @@ export default function PlaygroundPage() {
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.details || 'An unknown error occurred.');
+        const errorMessage = await handleError(res);
+        throw new Error(errorMessage);
       }
 
       const data = await res.json();
@@ -125,14 +134,15 @@ export default function PlaygroundPage() {
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.details || 'An unknown error occurred.');
+        const errorMessage = await handleError(res);
+        throw new Error(errorMessage);
       }
 
       const data = await res.json();
       if (data.images && data.images.length > 0) {
         setSdResponseImage(`data:image/png;base64,${data.images[0]}`);
       } else {
+        setOllamaResponse(JSON.stringify(data, null, 2)); // Show response if no image
         throw new Error("No image found in the response from Stable Diffusion.");
       }
     } catch (e: any) {
@@ -191,15 +201,7 @@ export default function PlaygroundPage() {
                         </div>
                         <div>
                             <Label htmlFor="ollama-model">Model</Label>
-                            <Select onValueChange={setOllamaModel} value={ollamaModel}>
-                                <SelectTrigger id="ollama-model"> <SelectValue placeholder="Select a model" /> </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="llama3.1:8b">llama3.1:8b</SelectItem>
-                                    <SelectItem value="llama3">llama3</SelectItem>
-                                    <SelectItem value="gemma:7b">gemma:7b</SelectItem>
-                                    <SelectItem value="phi3">phi3</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <Input id="ollama-model" placeholder="e.g., llama3" value={ollamaModel} onChange={(e) => setOllamaModel(e.target.value)} />
                         </div>
                     </div>
                     <div>
@@ -272,8 +274,8 @@ export default function PlaygroundPage() {
       {ollamaResponse && (
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2"><Terminal className="h-5 w-5"/> Ollama API Response</CardTitle>
-            <CardDescription> The raw JSON response from the Ollama service. </CardDescription>
+            <CardTitle className="font-headline flex items-center gap-2"><Terminal className="h-5 w-5"/> API Response</CardTitle>
+            <CardDescription> The raw JSON response from the API. </CardDescription>
           </CardHeader>
           <CardContent>
             <CodeBlock language="json">{ollamaResponse}</CodeBlock>

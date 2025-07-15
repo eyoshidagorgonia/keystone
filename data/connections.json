@@ -1,2 +1,10 @@
-
-[]
+[
+  {
+    "id": "conn_1752545147577_yypo2",
+    "timestamp": "2025-07-15T02:05:47.577Z",
+    "keyId": "key_1752302608281",
+    "keyName": "portlandtrail",
+    "path": "/api/v1/sd/txt2img",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+  }
+]
