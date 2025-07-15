@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CodeBlock } from '@/components/code-block';
-import type { ApiKey } from '@/types';
+import type { ApiKey, ServiceConfig } from '@/types';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, Terminal, Bot, Image as ImageIcon } from 'lucide-react';
@@ -33,6 +33,7 @@ import Image from 'next/image';
 export default function PlaygroundPage() {
   // Shared state
   const [apiKeys, setApiKeys] = React.useState<ApiKey[]>([]);
+  const [services, setServices] = React.useState<ServiceConfig[]>([]);
   const [selectedKey, setSelectedKey] = React.useState<string>('');
   const [error, setError] = React.useState<string>('');
   const [isLoading, setIsLoading] = React.useState(false);
@@ -47,27 +48,53 @@ export default function PlaygroundPage() {
   const [sdSteps, setSdSteps] = React.useState(25);
   const [sdModel, setSdModel] = React.useState('sd_xl_base_1.0.safetensors');
   const [sdResponseImage, setSdResponseImage] = React.useState<string>('');
+  
+  const parseModels = (modelsString?: string): string[] => {
+    if (!modelsString) return [];
+    return modelsString.split(',').map(m => m.trim()).filter(Boolean);
+  };
+  
+  const ollamaService = services.find(s => s.type === 'ollama' && s.status === 'active');
+  const sdService = services.find(s => s.type === 'stable-diffusion-a1111' && s.status === 'active');
+  const ollamaSupportedModels = parseModels(ollamaService?.supportedModels);
+  const sdSupportedModels = parseModels(sdService?.supportedModels);
 
 
   React.useEffect(() => {
-    async function fetchKeys() {
+    async function fetchData() {
       try {
-        const response = await fetch('/api/v1/keys');
-        if (!response.ok) {
-            throw new Error('Failed to fetch API keys');
-        }
-        const keys = await response.json();
+        const [keysResponse, servicesResponse] = await Promise.all([
+            fetch('/api/v1/keys'),
+            fetch('/api/v1/services')
+        ]);
+
+        if (!keysResponse.ok) throw new Error('Failed to fetch API keys');
+        const keys = await keysResponse.json();
         const activeKeys = keys.filter((k: ApiKey) => k.status === 'active');
         setApiKeys(activeKeys);
         if (activeKeys.length > 0) {
           setSelectedKey(activeKeys[0].key);
         }
+
+        if(!servicesResponse.ok) throw new Error('Failed to fetch services');
+        const serviceData = await servicesResponse.json();
+        setServices(serviceData);
+
       } catch (e: any) {
-        setError("Could not load API keys. " + e.message);
+        setError("Could not load initial data. " + e.message);
       }
     }
-    fetchKeys();
+    fetchData();
   }, []);
+  
+  const handleError = async (response: Response) => {
+    try {
+        const errorData = await response.json();
+        return errorData.details || errorData.error || 'An unknown error occurred.';
+    } catch (e) {
+        return `Request failed with status ${response.status}. Could not parse error response.`;
+    }
+  }
 
   const handleOllamaSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,8 +115,8 @@ export default function PlaygroundPage() {
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.details || 'An unknown error occurred.');
+        const errorMessage = await handleError(res);
+        throw new Error(errorMessage);
       }
 
       const data = await res.json();
@@ -125,8 +152,8 @@ export default function PlaygroundPage() {
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.details || 'An unknown error occurred.');
+        const errorMessage = await handleError(res);
+        throw new Error(errorMessage);
       }
 
       const data = await res.json();
@@ -176,8 +203,8 @@ export default function PlaygroundPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div>
+                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <div className="md:col-span-1">
                             <Label htmlFor="ollama-api-key">API Key</Label>
                             <Select onValueChange={setSelectedKey} value={selectedKey} >
                                 <SelectTrigger id="ollama-api-key"> <SelectValue placeholder="Select a key" /> </SelectTrigger>
@@ -190,9 +217,21 @@ export default function PlaygroundPage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div>
-                            <Label htmlFor="ollama-model">Model</Label>
-                            <Input id="ollama-model" placeholder="e.g., llama3" value={ollamaModel} onChange={(e) => setOllamaModel(e.target.value)} />
+                        <div className="md:col-span-2">
+                             <Label htmlFor="ollama-model">Model</Label>
+                            <div className="flex gap-2">
+                                <Input id="ollama-model" placeholder="e.g., llama3" value={ollamaModel} onChange={(e) => setOllamaModel(e.target.value)} />
+                                <Select onValueChange={(value) => setOllamaModel(value)} value={ollamaModel} disabled={ollamaSupportedModels.length === 0}>
+                                    <SelectTrigger id="ollama-model-select" className="w-[180px]"> <SelectValue placeholder="Presets" /> </SelectTrigger>
+                                    <SelectContent>
+                                        {ollamaSupportedModels.map((model) => (
+                                            <SelectItem key={model} value={model}>
+                                                {model}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     </div>
                     <div>
@@ -201,7 +240,9 @@ export default function PlaygroundPage() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button type="submit" disabled={isLoading}> {isLoading ? 'Sending...' : 'Send Request'} </Button>
+                    <Button type="submit" disabled={isLoading || !ollamaService}> 
+                        {isLoading ? 'Sending...' : (ollamaService ? 'Send Request' : 'Ollama Service Inactive')}
+                    </Button>
                 </CardFooter>
                 </form>
             </Card>
@@ -234,7 +275,19 @@ export default function PlaygroundPage() {
                             </div>
                              <div className="md:col-span-2">
                                 <Label htmlFor="sd-model">Model Checkpoint</Label>
-                                <Input id="sd-model" placeholder="e.g., sd_xl_base_1.0.safetensors" value={sdModel} onChange={(e) => setSdModel(e.target.value)} />
+                                 <div className="flex gap-2">
+                                    <Input id="sd-model" placeholder="e.g., sd_xl_base_1.0.safetensors" value={sdModel} onChange={(e) => setSdModel(e.target.value)} />
+                                     <Select onValueChange={(value) => setSdModel(value)} value={sdModel} disabled={sdSupportedModels.length === 0}>
+                                        <SelectTrigger id="sd-model-select" className="w-[180px]"> <SelectValue placeholder="Presets" /> </SelectTrigger>
+                                        <SelectContent>
+                                            {sdSupportedModels.map((model) => (
+                                                <SelectItem key={model} value={model}>
+                                                    {model}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                              </div>
                          </div>
                          <div>
@@ -247,7 +300,9 @@ export default function PlaygroundPage() {
                         </div>
                     </CardContent>
                     <CardFooter>
-                         <Button type="submit" disabled={isLoading}> {isLoading ? 'Generating...' : 'Generate Image'} </Button>
+                         <Button type="submit" disabled={isLoading || !sdService}> 
+                            {isLoading ? 'Generating...' : (sdService ? 'Generate Image' : 'SD Service Inactive')}
+                         </Button>
                     </CardFooter>
                  </form>
             </Card>
@@ -289,3 +344,5 @@ export default function PlaygroundPage() {
     </div>
   );
 }
+
+    
