@@ -118,3 +118,29 @@ export async function getActiveServiceUrl(type: 'ollama' | 'stable-diffusion-a11
 
     return service.targetUrl;
 }
+
+export async function saveServiceConfigs(services: ServiceConfig[]): Promise<void> {
+    if (useFirestore) {
+        try {
+            const collection = await getServicesCollection();
+            const batch = db.batch();
+            // Delete existing services first to handle removals
+            const snapshot = await collection.get();
+            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+            // Add new services
+            services.forEach(service => {
+                const docRef = collection.doc(service.id);
+                batch.set(docRef, service);
+            });
+            await batch.commit();
+            console.log(`[Service Config] Successfully saved ${services.length} services to Firestore.`);
+            return;
+        } catch (e) {
+            // fallback
+        }
+    }
+    await saveLocalServices(services);
+    console.log(`[Service Config] Successfully saved ${services.length} services to local file.`);
+}
+
+    

@@ -132,15 +132,23 @@ export async function saveApiKeys(keys: ApiKey[]): Promise<void> {
         try {
             const collection = await getKeysCollection();
             const batch = db.batch();
+            // Delete existing keys first to handle removals
+            const snapshot = await collection.get();
+            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+            // Add new keys
             keys.forEach(key => {
                 const docRef = collection.doc(key.id);
                 batch.set(docRef, key);
             });
             await batch.commit();
+            console.log(`[API Key Service] Successfully saved ${keys.length} keys to Firestore.`);
             return;
         } catch (e) {
             // fallback
         }
     }
     await saveLocalApiKeys(keys);
+    console.log(`[API Key Service] Successfully saved ${keys.length} keys to local file.`);
 }
+
+    
