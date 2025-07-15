@@ -7,6 +7,7 @@ export interface ApiKey {
   lastUsed: string | null;
   usage: number;
   rateLimit: number;
+  notes?: string;
 }
 
 export interface UsageStat {
