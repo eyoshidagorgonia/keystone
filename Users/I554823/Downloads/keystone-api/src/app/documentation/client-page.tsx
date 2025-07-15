@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -300,5 +299,3 @@ Client Application`}
     </div>
   );
 }
-
-    
