@@ -17,8 +17,6 @@ import { AddServiceDialog } from "@/components/add-service-dialog";
 import { EditServiceDialog } from "@/components/edit-service-dialog";
 import { toast } from "@/hooks/use-toast";
 import * as actions from "./actions";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-
 
 const serviceIcons = {
     'ollama': Bot,
@@ -110,16 +108,7 @@ export function ServicesClientPage({ initialServices }: { initialServices: Servi
                     </div>
                     <div>
                          <h3 className="font-semibold text-muted-foreground">Target URL</h3>
-                         <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <p className="truncate cursor-default">{service.targetUrl}</p>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>{service.targetUrl}</p>
-                                </TooltipContent>
-                            </Tooltip>
-                         </TooltipProvider>
+                         <p className="break-all font-mono text-xs text-muted-foreground">{service.targetUrl}</p>
                     </div>
                     <div>
                         <h3 className="font-semibold text-muted-foreground">AI Service API Key</h3>
