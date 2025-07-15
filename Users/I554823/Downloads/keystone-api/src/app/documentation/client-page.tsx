@@ -35,7 +35,7 @@ export function DocumentationClientPage({ services }: { services: ServiceConfig[
         <CardHeader>
           <CardTitle className="font-headline">API Endpoint Base URL</CardTitle>
           <CardDescription>
-            Use this to set the base URL for the code examples below.
+            Use this to set the base URL for the code examples below. This is useful for testing against different environments.
           </CardDescription>
         </CardHeader>
         <CardContent>
