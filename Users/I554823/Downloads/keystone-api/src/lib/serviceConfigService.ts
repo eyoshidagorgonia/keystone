@@ -63,11 +63,13 @@ export async function getServiceConfigs(): Promise<ServiceConfig[]> {
   return getLocalServices();
 }
 
-export async function addServiceConfig(serviceData: Omit<ServiceConfig, 'id' | 'createdAt'>): Promise<ServiceConfig> {
+export async function addServiceConfig(serviceData: Omit<ServiceConfig, 'id' | 'createdAt' | 'supportedModels' | 'apiKey'> & { supportedModels?: string, apiKey?: string }): Promise<ServiceConfig> {
   const newService: ServiceConfig = {
     id: `svc_${Date.now()}`,
     createdAt: new Date().toISOString(),
     ...serviceData,
+    supportedModels: serviceData.supportedModels || '',
+    apiKey: serviceData.apiKey || '',
   };
 
   if (useFirestore) {
@@ -142,5 +144,3 @@ export async function saveServiceConfigs(services: ServiceConfig[]): Promise<voi
     await saveLocalServices(services);
     console.log(`[Service Config] Successfully saved ${services.length} services to local file.`);
 }
-
-    
