@@ -18,11 +18,19 @@ import { z } from "zod"
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import type { ApiKey } from "@/types"
 import { toast } from "@/hooks/use-toast"
 import { useEffect } from "react"
@@ -38,6 +46,7 @@ interface EditKeyDialogProps {
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   key: z.string().min(10, "Key must be at least 10 characters long."),
+  status: z.enum(['active', 'revoked']),
 })
 
 export function EditKeyDialog({ open, onOpenChange, onKeyUpdated, apiKey }: EditKeyDialogProps) {
@@ -46,6 +55,7 @@ export function EditKeyDialog({ open, onOpenChange, onKeyUpdated, apiKey }: Edit
     defaultValues: {
       name: apiKey.name,
       key: apiKey.key,
+      status: apiKey.status,
     },
   })
   
@@ -53,6 +63,7 @@ export function EditKeyDialog({ open, onOpenChange, onKeyUpdated, apiKey }: Edit
     form.reset({
         name: apiKey.name,
         key: apiKey.key,
+        status: apiKey.status,
     });
   }, [apiKey, form]);
 
@@ -62,6 +73,7 @@ export function EditKeyDialog({ open, onOpenChange, onKeyUpdated, apiKey }: Edit
       ...apiKey,
       name: values.name,
       key: values.key,
+      status: values.status,
     }
     await updateApiKey(updatedKey);
     onKeyUpdated(updatedKey);
@@ -88,17 +100,17 @@ export function EditKeyDialog({ open, onOpenChange, onKeyUpdated, apiKey }: Edit
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Key Name</FormLabel>
-                    <FormControl>
-                        <Input placeholder="e.g., My Awesome App" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Key Name</FormLabel>
+                        <FormControl>
+                            <Input placeholder="e.g., My Awesome App" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
                 />
                  <FormField
                     control={form.control}
@@ -113,6 +125,30 @@ export function EditKeyDialog({ open, onOpenChange, onKeyUpdated, apiKey }: Edit
                         </FormItem>
                     )}
                 />
+                <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Status</FormLabel>
+                         <Select onValueChange={field.onChange} defaultValue={field.value}>
+                             <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="revoked">Revoked</SelectItem>
+                            </SelectContent>
+                        </Select>
+                         <FormDescription>
+                            Revoking a key will prevent it from being used.
+                        </FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <DialogFooter>
                     <Button type="button" variant="ghost" onClick={handleClose}>Cancel</Button>
                     <Button type="submit">Save Changes</Button>
@@ -123,4 +159,3 @@ export function EditKeyDialog({ open, onOpenChange, onKeyUpdated, apiKey }: Edit
     </Dialog>
   )
 }
-

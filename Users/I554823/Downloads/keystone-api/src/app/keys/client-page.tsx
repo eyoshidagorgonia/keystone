@@ -56,7 +56,7 @@ export function KeysClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
   const [selectedKey, setSelectedKey] = React.useState<ApiKey | null>(null);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
-  const handleRefresh = async () => {
+  const fetchKeys = React.useCallback(async (showToast = false) => {
     setIsRefreshing(true);
     try {
       const response = await fetch('/api/v1/keys');
@@ -65,13 +65,25 @@ export function KeysClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
       }
       const keys = await response.json();
       setApiKeys(keys);
-      toast({ title: "Keys Refreshed", description: "The list of API keys has been updated." });
+      if (showToast) {
+        toast({ title: "Keys Refreshed", description: "The list of API keys has been updated." });
+      }
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      if (showToast) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else {
+        console.error("Failed to auto-refresh keys:", error.message);
+      }
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, []);
+
+  React.useEffect(() => {
+    // Initial fetch is done via props, but we start polling immediately.
+    const intervalId = setInterval(() => fetchKeys(false), 5000); // Poll every 5 seconds
+    return () => clearInterval(intervalId); // Cleanup on component unmount
+  }, [fetchKeys]);
   
   const handleKeyGenerated = (key: ApiKey) => {
      setApiKeys((prev) => [key, ...prev]);
@@ -114,7 +126,7 @@ export function KeysClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
             </p>
         </div>
         <div className="flex gap-2">
-            <Button onClick={handleRefresh} variant="outline" disabled={isRefreshing}>
+            <Button onClick={() => fetchKeys(true)} variant="outline" disabled={isRefreshing}>
                 <RefreshCw className={cn("mr-2 h-4 w-4", isRefreshing && "animate-spin")} />
                 Refresh
             </Button>
@@ -147,7 +159,7 @@ export function KeysClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
                     {key.key}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={key.status === "active" ? "secondary" : "destructive"} className="capitalize bg-primary/20 text-primary-foreground">
+                    <Badge variant={key.status === "active" ? "secondary" : "destructive"} className={cn("capitalize", key.status === 'active' ? "bg-green-500/20 text-green-300" : "")}>
                       {key.status}
                     </Badge>
                   </TableCell>
@@ -186,7 +198,7 @@ export function KeysClientPage({ initialKeys }: { initialKeys: ApiKey[]}) {
                                 <AlertDialogHeader>
                                 <AlertDialogTitle>Are you sure you want to revoke this key?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    This will disable the key immediately. This action can be undone later.
+                                    This will disable the key immediately. This action can be undone later by editing the key.
                                 </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
