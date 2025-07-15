@@ -11,12 +11,14 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bot, Image as ImageIcon, Plus, Server, Pencil, Cpu } from "lucide-react";
+import { Bot, Image as ImageIcon, Plus, Server, Pencil, Cpu, RefreshCw } from "lucide-react";
 import type { ServiceConfig } from "@/types";
 import { AddServiceDialog } from "@/components/add-service-dialog";
 import { EditServiceDialog } from "@/components/edit-service-dialog";
 import { toast } from "@/hooks/use-toast";
-import * as actions from "./actions";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+
 
 const serviceIcons = {
     'ollama': Bot,
@@ -34,6 +36,24 @@ export function ServicesClientPage({ initialServices }: { initialServices: Servi
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
   const [selectedService, setSelectedService] = React.useState<ServiceConfig | null>(null);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const response = await fetch('/api/v1/services');
+      if (!response.ok) {
+        throw new Error('Failed to fetch services');
+      }
+      const data = await response.json();
+      setServices(data);
+      toast({ title: "Services Refreshed", description: "The list of services has been updated." });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleServiceAdded = (newService: ServiceConfig) => {
     setServices((prev) => [...prev, newService]);
@@ -65,10 +85,16 @@ export function ServicesClientPage({ initialServices }: { initialServices: Servi
             Manage and monitor your proxied AI services.
             </p>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="-ml-1 mr-2 h-4 w-4" />
-            Add New Service
-        </Button>
+        <div className="flex gap-2">
+            <Button onClick={handleRefresh} variant="outline" disabled={isRefreshing}>
+                <RefreshCw className={cn("mr-2 h-4 w-4", isRefreshing && "animate-spin")} />
+                Refresh
+            </Button>
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+                <Plus className="-ml-1 mr-2 h-4 w-4" />
+                Add New Service
+            </Button>
+        </div>
       </header>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -108,7 +134,16 @@ export function ServicesClientPage({ initialServices }: { initialServices: Servi
                     </div>
                     <div>
                          <h3 className="font-semibold text-muted-foreground">Target URL</h3>
-                         <p className="break-all font-mono text-xs text-muted-foreground">{service.targetUrl}</p>
+                         <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <p className="truncate cursor-default">{service.targetUrl}</p>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{service.targetUrl}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                         </TooltipProvider>
                     </div>
                     <div>
                         <h3 className="font-semibold text-muted-foreground">AI Service API Key</h3>
