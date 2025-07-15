@@ -8,6 +8,7 @@ export interface ApiKey {
   lastUsed: string | null;
   usage: number;
   rateLimit: number;
+  notes?: string;
 }
 
 export interface UsageStat {
@@ -39,3 +40,4 @@ export interface ServiceConfig {
   apiKey?: string; // Optional API key for the target service itself
   supportedModels?: string;
 }
+

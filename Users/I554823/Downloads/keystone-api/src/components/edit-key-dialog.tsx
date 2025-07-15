@@ -37,6 +37,7 @@ interface EditKeyDialogProps {
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
+  key: z.string().min(10, "Key must be at least 10 characters long."),
 })
 
 export function EditKeyDialog({ open, onOpenChange, onKeyUpdated, apiKey }: EditKeyDialogProps) {
@@ -44,12 +45,14 @@ export function EditKeyDialog({ open, onOpenChange, onKeyUpdated, apiKey }: Edit
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: apiKey.name,
+      key: apiKey.key,
     },
   })
   
   useEffect(() => {
     form.reset({
         name: apiKey.name,
+        key: apiKey.key,
     });
   }, [apiKey, form]);
 
@@ -58,6 +61,7 @@ export function EditKeyDialog({ open, onOpenChange, onKeyUpdated, apiKey }: Edit
     const updatedKey: ApiKey = {
       ...apiKey,
       name: values.name,
+      key: values.key,
     }
     await updateApiKey(updatedKey);
     onKeyUpdated(updatedKey);
@@ -96,10 +100,19 @@ export function EditKeyDialog({ open, onOpenChange, onKeyUpdated, apiKey }: Edit
                     </FormItem>
                 )}
                 />
-                 <div className="space-y-2">
-                    <Label>Key</Label>
-                    <Input readOnly disabled value={`${apiKey.key.substring(0, 11)}...`} className="font-mono" />
-                </div>
+                 <FormField
+                    control={form.control}
+                    name="key"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Key Value</FormLabel>
+                        <FormControl>
+                            <Input placeholder="ks_..." {...field} className="font-mono" />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <DialogFooter>
                     <Button type="button" variant="ghost" onClick={handleClose}>Cancel</Button>
                     <Button type="submit">Save Changes</Button>
@@ -110,3 +123,4 @@ export function EditKeyDialog({ open, onOpenChange, onKeyUpdated, apiKey }: Edit
     </Dialog>
   )
 }
+
