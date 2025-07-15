@@ -77,6 +77,7 @@ export default function PlaygroundPage() {
     }
     setIsLoading(true);
     setOllamaResponse('');
+    setSdResponseImage('');
     setError('');
 
     try {
@@ -109,6 +110,7 @@ export default function PlaygroundPage() {
     }
     setIsLoading(true);
     setSdResponseImage('');
+    setOllamaResponse('');
     setError('');
 
     try {
