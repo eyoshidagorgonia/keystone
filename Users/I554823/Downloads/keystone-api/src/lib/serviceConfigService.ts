@@ -126,7 +126,7 @@ export async function saveServiceConfigs(services: ServiceConfig[]): Promise<voi
         try {
             const collection = await getServicesCollection();
             const batch = db.batch();
-            // Delete existing services first
+            // Delete existing services first to handle removals
             const snapshot = await collection.get();
             snapshot.docs.forEach(doc => batch.delete(doc.ref));
             // Add new services
